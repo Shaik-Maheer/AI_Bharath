@@ -37,11 +37,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-navy px-6 py-4 text-white">
-        <p className="text-xs font-bold uppercase tracking-wide text-gold">Government of India - Ministry of Law & Justice</p>
+      <header className="border-b border-slate-200 bg-navy px-4 py-4 text-white sm:px-6">
+        <p className="text-[11px] font-bold uppercase tracking-wide text-gold sm:text-xs">Government of India - Ministry of Law & Justice</p>
       </header>
       <main className="grid min-h-[calc(100vh-57px)] place-items-center px-4 py-10">
-        <div className="w-full max-w-md rounded-md border border-slate-200 bg-white p-7 shadow-gov">
+        <div className="w-full max-w-md rounded-md border border-slate-200 bg-white p-5 shadow-gov sm:p-7">
           <div className="flex items-center gap-3">
             <div className="grid h-12 w-12 place-items-center rounded-md bg-navy text-gold">
               <Gavel className="h-7 w-7" />
@@ -87,4 +87,3 @@ export default function Login() {
     </div>
   );
 }
-

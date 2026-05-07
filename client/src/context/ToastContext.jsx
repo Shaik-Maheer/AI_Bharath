@@ -15,12 +15,12 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ notify }}>
       {children}
-      <div className="fixed right-4 top-4 z-50 space-y-2">
+      <div className="fixed inset-x-3 top-3 z-50 space-y-2 sm:inset-x-auto sm:right-4 sm:top-4 sm:w-full sm:max-w-sm">
         {toasts.map((toast) => {
           const Icon = toast.type === 'error' ? AlertTriangle : toast.type === 'info' ? Info : CheckCircle2;
           const color = toast.type === 'error' ? 'border-red-200 bg-red-50 text-red-800' : 'border-emerald-200 bg-white text-slate-800';
           return (
-            <div key={toast.id} className={`flex min-w-72 items-start gap-3 rounded-md border p-3 shadow-gov ${color}`}>
+            <div key={toast.id} className={`flex w-full items-start gap-3 rounded-md border p-3 shadow-gov ${color}`}>
               <Icon className="mt-0.5 h-5 w-5 shrink-0" />
               <p className="text-sm font-medium">{toast.message}</p>
               <button className="ml-auto text-slate-500" onClick={() => setToasts((current) => current.filter((item) => item.id !== toast.id))}>
@@ -37,4 +37,3 @@ export function ToastProvider({ children }) {
 export function useToast() {
   return useContext(ToastContext);
 }
-

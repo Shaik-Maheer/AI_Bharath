@@ -113,7 +113,7 @@ export default function CaseDetail() {
   return (
     <div className="space-y-5">
       <section>
-        <h1 className="text-2xl font-extrabold text-navy">{caseData.caseTitle}</h1>
+        <h1 className="break-words text-2xl font-extrabold text-navy">{caseData.caseTitle}</h1>
         <p className="mt-1 text-sm text-slate-600">{caseData.courtName} - {caseData.caseNumber}</p>
       </section>
       {user?.role === 'viewer' && (
@@ -124,7 +124,7 @@ export default function CaseDetail() {
 
       <div className="flex gap-2 overflow-x-auto border-b border-slate-200">
         {tabs.map((tab) => (
-          <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-3 text-sm font-bold ${activeTab === tab ? 'border-b-2 border-gold text-navy' : 'text-slate-500'}`}>
+          <button key={tab} onClick={() => setActiveTab(tab)} className={`shrink-0 px-4 py-3 text-sm font-bold ${activeTab === tab ? 'border-b-2 border-gold text-navy' : 'text-slate-500'}`}>
             {tab}
           </button>
         ))}
@@ -145,7 +145,7 @@ export default function CaseDetail() {
           </div>
           <div className="rounded-md border border-slate-200 bg-white p-5 shadow-gov">
             <h2 className="text-lg font-extrabold text-navy">Extraction Stats</h2>
-            <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
               {Object.entries(stats).map(([key, value]) => (
                 <div key={key} className="rounded-md bg-slate-50 p-4">
                   <p className="text-xs font-bold uppercase text-slate-500">{key}</p>
@@ -215,13 +215,13 @@ export default function CaseDetail() {
 
       {activeTab === 'Audit Trail' && (
         <section className="space-y-4">
-          <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-gov md:flex-row">
-            <select value={auditFilter.action} onChange={(event) => setAuditFilter({ ...auditFilter, action: event.target.value })} className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold">
+          <div className="flex flex-col gap-3 rounded-md border border-slate-200 bg-white p-4 shadow-gov md:flex-row md:items-center">
+            <select value={auditFilter.action} onChange={(event) => setAuditFilter({ ...auditFilter, action: event.target.value })} className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold md:w-auto">
               <option value="">All actions</option>
               {[...new Set(audit.map((item) => item.action))].map((item) => <option key={item}>{item}</option>)}
             </select>
-            <input value={auditFilter.user} onChange={(event) => setAuditFilter({ ...auditFilter, user: event.target.value })} placeholder="Filter by user" className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold" />
-            <button onClick={exportCsv} className="focus-ring inline-flex items-center gap-2 rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy">
+            <input value={auditFilter.user} onChange={(event) => setAuditFilter({ ...auditFilter, user: event.target.value })} placeholder="Filter by user" className="w-full rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold md:w-auto md:flex-1" />
+            <button onClick={exportCsv} className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy md:w-auto">
               <Download className="h-4 w-4" />
               Export CSV
             </button>

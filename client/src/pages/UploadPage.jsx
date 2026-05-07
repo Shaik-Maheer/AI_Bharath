@@ -136,7 +136,7 @@ export default function UploadPage() {
                       Timeline: {formatDate(directive.deadline)} {directive.deadlineInferred ? '(inferred)' : '(explicit)'} - {directive.deadlineNote}
                     </p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-3">
+                  <div className="flex w-full items-center gap-3 sm:w-auto">
                     <ConfidenceBar value={directive.confidenceScore} />
                     <StatusBadge value={directive.actionType} />
                   </div>
@@ -145,7 +145,7 @@ export default function UploadPage() {
             ))}
           </div>
 
-          <Link to={`/cases/${result.case.caseId}/verify`} className="focus-ring inline-flex items-center gap-2 rounded-md bg-navy px-5 py-3 font-bold text-white">
+          <Link to={`/cases/${result.case.caseId}/verify`} className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-navy px-5 py-3 font-bold text-white sm:w-auto">
             Proceed to Verification
             <ArrowRight className="h-4 w-4" />
           </Link>

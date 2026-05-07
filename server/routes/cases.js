@@ -136,6 +136,8 @@ router.get('/:caseId', protect, async (req, res, next) => {
     const directives = await Directive.find({ caseId: foundCase._id })
       .populate('verifiedBy', 'name email role')
       .populate('dependsOn', 'directiveNumber trackingStatus')
+      .populate('trackingHistory.updatedBy', 'name email role')
+      .populate('editHistory.editedBy', 'name email role')
       .sort({ directiveNumber: 1 });
     const audit = await AuditLog.find({ caseId: foundCase._id }).populate('performedBy', 'name email role').sort({ performedAt: -1 });
 

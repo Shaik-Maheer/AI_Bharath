@@ -147,7 +147,7 @@ export default function VerifyPage() {
                   onClick={() => selectDirective(directive)}
                   className={`w-full rounded-md border p-4 text-left ${selectedId === directive._id ? 'border-gold bg-amber-50' : 'border-slate-200 bg-white'}`}
                 >
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="font-extrabold text-navy">Directive {directive.directiveNumber}</p>
                     <ConfidenceBar value={directive.confidenceScore} />
                   </div>
@@ -167,7 +167,7 @@ export default function VerifyPage() {
                   <p className="mt-2 bg-yellow-100 px-2 py-1 text-sm leading-6 text-slate-700">{selected.sourceText}</p>
                   <p className="mt-2 text-xs font-semibold text-slate-500">Source paragraph: {selected.sourceParagraph}</p>
                 </div>
-                <div className="space-y-2">
+                <div className="w-full space-y-2 md:w-auto">
                   <ConfidenceBar value={selected.confidenceScore} />
                   <StatusBadge value={selected.verificationStatus} />
                 </div>
@@ -231,7 +231,7 @@ export default function VerifyPage() {
 
               <div className="mt-4 rounded-md border border-slate-200 p-4">
                 <p className="text-sm font-bold text-navy">Dependencies</p>
-                <div className="mt-3 grid gap-2 md:grid-cols-2">
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
                   {directives.filter((item) => item._id !== selected._id).map((item) => (
                     <label key={item._id} className="flex items-center gap-2 text-sm text-slate-700">
                       <input type="checkbox" checked={(form.dependsOn || []).includes(item._id)} onChange={() => toggleDependency(item._id)} />

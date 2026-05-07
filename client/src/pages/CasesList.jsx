@@ -85,7 +85,7 @@ export default function CasesList() {
           <p className="mt-1 text-sm text-slate-600">Judgment uploads, extraction state, and verification entry points.</p>
         </div>
         {user?.role !== 'viewer' && (
-          <Link to="/cases/upload" className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-bold text-white">
+          <Link to="/cases/upload" className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-bold text-white sm:w-auto">
             <FileUp className="h-4 w-4" />
             Upload New Judgment
           </Link>
@@ -103,7 +103,7 @@ export default function CasesList() {
           </select>
           <input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold" />
           <input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold" />
-          <button onClick={load} disabled={loading} className="focus-ring rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy disabled:opacity-60">
+          <button onClick={load} disabled={loading} className="focus-ring w-full rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy disabled:opacity-60">
             {loading ? 'Loading...' : 'Apply Filters'}
           </button>
         </div>
@@ -125,7 +125,7 @@ export default function CasesList() {
             key: 'actions',
             label: 'Actions',
             render: (row) => (
-              <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
+              <div className="flex flex-wrap items-center gap-2" onClick={(event) => event.stopPropagation()}>
                 {row.status === 'pending_verification' && (
                   user?.role === 'reviewer' ? (
                     <Link to={`/cases/${row.caseId}/verify`} className="rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy">

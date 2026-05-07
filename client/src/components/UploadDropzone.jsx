@@ -12,10 +12,10 @@ export default function UploadDropzone({ file, setFile, text, setText, onSample,
       <label
         onDragOver={(event) => event.preventDefault()}
         onDrop={onDrop}
-        className="flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-white p-10 text-center hover:border-gold"
+        className="flex cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-slate-300 bg-white p-6 text-center hover:border-gold sm:p-10"
       >
         <FileUp className="h-10 w-10 text-navy" />
-        <p className="mt-3 text-lg font-extrabold text-navy">{file ? file.name : 'Drop judgment PDF here'}</p>
+        <p className="mt-3 break-words text-base font-extrabold text-navy sm:text-lg">{file ? file.name : 'Drop judgment PDF here'}</p>
         <p className="mt-1 text-sm text-slate-500">PDF only, maximum 10MB</p>
         <input type="file" accept="application/pdf" className="hidden" onChange={(event) => setFile(event.target.files?.[0] || null)} />
       </label>
@@ -36,4 +36,3 @@ export default function UploadDropzone({ file, setFile, text, setText, onSample,
     </div>
   );
 }
-

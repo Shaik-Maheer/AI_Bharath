@@ -15,14 +15,14 @@ export default function CaseReadOnlyModal({ open, onClose, loading, caseData, di
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/50 p-4">
-      <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-md bg-white p-5 shadow-gov">
-        <div className="flex items-start justify-between">
+    <div className="fixed inset-0 z-50 grid place-items-center bg-navy/50 p-3 sm:p-4">
+      <div className="max-h-[90vh] w-full max-w-6xl overflow-y-auto rounded-md bg-white p-4 shadow-gov sm:p-5">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h2 className="text-xl font-extrabold text-navy">Case Detail (Read-Only)</h2>
             <p className="mt-1 text-sm text-slate-600">Trusted view for governance monitoring.</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-500 hover:bg-slate-100" title="Close">
+          <button onClick={onClose} className="self-end rounded-md p-1 text-slate-500 hover:bg-slate-100 sm:self-auto" title="Close">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -42,7 +42,26 @@ export default function CaseReadOnlyModal({ open, onClose, loading, caseData, di
 
             <section>
               <h3 className="mb-3 text-lg font-extrabold text-navy">Directives and Evidence</h3>
-              <div className="overflow-x-auto rounded-md border border-slate-200">
+              <div className="space-y-3 md:hidden">
+                {(directives || []).map((directive) => (
+                  <div key={directive._id} className="rounded-md border border-slate-200 bg-white p-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-extrabold text-navy">Directive {directive.directiveNumber}</p>
+                      <StatusBadge value={directive.verificationStatus} />
+                      <StatusBadge value={directive.trackingStatus} />
+                    </div>
+                    <p className="mt-3 text-sm font-semibold text-slate-800">{directive.directiveText}</p>
+                    <p className="mt-2 text-sm leading-6 text-slate-700">{directive.sourceText}</p>
+                    <div className="mt-3 grid gap-2 text-xs text-slate-600 sm:grid-cols-2">
+                      <p><span className="font-bold uppercase tracking-wide text-slate-500">Department:</span> {directive.responsibleDepartment || 'Not set'}</p>
+                      <p><span className="font-bold uppercase tracking-wide text-slate-500">Deadline:</span> {formatDate(directive.deadline)}</p>
+                      <p><span className="font-bold uppercase tracking-wide text-slate-500">Risk:</span> {directive.riskScore ?? 'Not set'}</p>
+                      <p><span className="font-bold uppercase tracking-wide text-slate-500">Action:</span> {directive.actionDescription || 'Not set'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden overflow-x-auto rounded-md border border-slate-200 md:block">
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-slate-50">
                     <tr>
@@ -102,4 +121,3 @@ export default function CaseReadOnlyModal({ open, onClose, loading, caseData, di
     </div>
   );
 }
-

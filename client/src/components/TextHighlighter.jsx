@@ -2,7 +2,7 @@ export default function TextHighlighter({ text, activeSource }) {
   const paragraphs = String(text || '').split(/\n+/).filter(Boolean);
 
   return (
-    <div className="max-h-[72vh] overflow-auto rounded-md border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700">
+    <div className="max-h-[60vh] overflow-auto rounded-md border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-700 sm:max-h-[72vh]">
       {paragraphs.map((paragraph, index) => {
         const active = activeSource && paragraph.includes(activeSource.replace(/^\d+\.\s*/, '').slice(0, 80));
         return (
@@ -15,4 +15,3 @@ export default function TextHighlighter({ text, activeSource }) {
     </div>
   );
 }
-

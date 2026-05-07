@@ -109,42 +109,71 @@ export default function UserManagement() {
         {loading ? (
           <p className="mt-4 text-sm text-slate-600">Loading users...</p>
         ) : users.length ? (
-          <div className="mt-4 overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="table-header">Name</th>
-                  <th className="table-header">Email</th>
-                  <th className="table-header">Role</th>
-                  <th className="table-header">Department</th>
-                  <th className="table-header">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td className="table-cell font-semibold text-navy">{user.name}</td>
-                    <td className="table-cell">{user.email}</td>
-                    <td className="table-cell">
-                      <select value={edits[user.id]?.role || user.role} onChange={(event) => setEdit(user.id, 'role', event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
+          <div className="mt-4 space-y-3">
+            <div className="space-y-3 md:hidden">
+              {users.map((user) => (
+                <div key={user.id} className="rounded-md border border-slate-200 bg-white p-3">
+                  <p className="text-sm font-extrabold text-navy">{user.name}</p>
+                  <p className="mt-1 break-all text-xs text-slate-600">{user.email}</p>
+                  <div className="mt-3 grid gap-3">
+                    <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Role
+                      <select value={edits[user.id]?.role || user.role} onChange={(event) => setEdit(user.id, 'role', event.target.value)} className="mt-1.5 w-full rounded-md border border-slate-200 px-2 py-2 text-sm outline-none focus:border-gold">
                         {roles.map((role) => <option key={role}>{role}</option>)}
                       </select>
-                    </td>
-                    <td className="table-cell">
-                      <select value={edits[user.id]?.department || user.department} onChange={(event) => setEdit(user.id, 'department', event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
+                    </label>
+                    <label className="text-xs font-bold uppercase tracking-wide text-slate-500">
+                      Department
+                      <select value={edits[user.id]?.department || user.department} onChange={(event) => setEdit(user.id, 'department', event.target.value)} className="mt-1.5 w-full rounded-md border border-slate-200 px-2 py-2 text-sm outline-none focus:border-gold">
                         {departments.map((department) => <option key={department}>{department}</option>)}
                       </select>
-                    </td>
-                    <td className="table-cell">
-                      <button onClick={() => saveUser(user.id)} disabled={savingId === user.id} className="focus-ring inline-flex items-center gap-2 rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy disabled:opacity-50">
-                        <Save className="h-4 w-4" />
-                        {savingId === user.id ? 'Saving...' : 'Save'}
-                      </button>
-                    </td>
+                    </label>
+                    <button onClick={() => saveUser(user.id)} disabled={savingId === user.id} className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md border border-gold px-3 py-2 text-sm font-bold text-navy disabled:opacity-50">
+                      <Save className="h-4 w-4" />
+                      {savingId === user.id ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="hidden overflow-x-auto md:block">
+              <table className="min-w-full divide-y divide-slate-200">
+                <thead className="bg-slate-50">
+                  <tr>
+                    <th className="table-header">Name</th>
+                    <th className="table-header">Email</th>
+                    <th className="table-header">Role</th>
+                    <th className="table-header">Department</th>
+                    <th className="table-header">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td className="table-cell font-semibold text-navy">{user.name}</td>
+                      <td className="table-cell">{user.email}</td>
+                      <td className="table-cell">
+                        <select value={edits[user.id]?.role || user.role} onChange={(event) => setEdit(user.id, 'role', event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
+                          {roles.map((role) => <option key={role}>{role}</option>)}
+                        </select>
+                      </td>
+                      <td className="table-cell">
+                        <select value={edits[user.id]?.department || user.department} onChange={(event) => setEdit(user.id, 'department', event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
+                          {departments.map((department) => <option key={department}>{department}</option>)}
+                        </select>
+                      </td>
+                      <td className="table-cell">
+                        <button onClick={() => saveUser(user.id)} disabled={savingId === user.id} className="focus-ring inline-flex items-center gap-2 rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy disabled:opacity-50">
+                          <Save className="h-4 w-4" />
+                          {savingId === user.id ? 'Saving...' : 'Save'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <div className="mt-4">
@@ -155,4 +184,3 @@ export default function UserManagement() {
     </div>
   );
 }
-

@@ -12,6 +12,7 @@ import SortableTable from '../components/SortableTable';
 import StatusBadge from '../components/StatusBadge';
 import EmptyState from '../components/EmptyState';
 import CaseReadOnlyModal from '../components/CaseReadOnlyModal';
+import TrustedActionRegister from '../components/TrustedActionRegister';
 import { BarChart, DonutChart } from '../components/Charts';
 
 function isOverdueAction(action) {
@@ -400,14 +401,14 @@ export default function Dashboard() {
                 className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold"
               />
             </label>
-            <button onClick={resetViewerFilters} className="focus-ring rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700">
+            <button onClick={resetViewerFilters} className="focus-ring w-full rounded-md border border-slate-300 px-4 py-2 text-sm font-bold text-slate-700">
               Reset Filters
             </button>
-            <button onClick={exportViewerCsv} className="focus-ring inline-flex items-center justify-center gap-2 rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy">
+            <button onClick={exportViewerCsv} className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy">
               <Download className="h-4 w-4" />
               Export CSV
             </button>
-            <button onClick={exportViewerPdf} className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold text-white">
+            <button onClick={exportViewerPdf} className="focus-ring inline-flex w-full items-center justify-center gap-2 rounded-md bg-navy px-4 py-2 text-sm font-bold text-white">
               <Download className="h-4 w-4" />
               Export PDF
             </button>
@@ -445,9 +446,9 @@ export default function Dashboard() {
 
       {user?.role === 'reviewer' && (
         <section>
-          <div className="mb-3 flex items-center justify-between">
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-extrabold text-navy">Reviewer Verification Queue</h2>
-            <Link to="/review-queue" className="rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy">Open Full Queue</Link>
+            <Link to="/review-queue" className="rounded-md border border-gold px-3 py-1.5 text-center text-xs font-bold text-navy">Open Full Queue</Link>
           </div>
           <SortableTable
             rows={reviewQueue}
@@ -526,30 +527,7 @@ export default function Dashboard() {
         />
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-extrabold text-navy">Approved Action Register (Trusted View)</h2>
-        <SortableTable
-          rows={trustedRows}
-          onRowClick={user?.role === 'viewer' ? openCaseDetails : undefined}
-          empty={<EmptyState title="No approved actions" message="Approve directives in verification to publish them to the trusted dashboard." />}
-          columns={[
-            { key: 'case', label: 'Case ID', accessor: (row) => row.caseId?.caseId, render: (row) => <span className="font-bold text-navy">{row.caseId?.caseId}</span> },
-            { key: 'directiveNumber', label: 'Directive' },
-            { key: 'responsibleDepartment', label: 'Department' },
-            { key: 'actionDescription', label: 'Action' },
-            { key: 'party', label: 'Party', render: (row) => `${row.caseId?.petitioner || '-'} vs ${row.caseId?.respondent || '-'}` },
-            { key: 'dateOfOrder', label: 'Order Date', accessor: (row) => row.caseId?.dateOfOrder, render: (row) => formatDate(row.caseId?.dateOfOrder) },
-            { key: 'verifiedAt', label: 'Verified On', render: (row) => formatDate(row.verifiedAt) },
-            { key: 'deadline', label: 'Deadline', render: (row) => <span className={new Date(row.deadline) < new Date() && row.trackingStatus !== 'Completed' ? 'font-bold text-red-700' : ''}>{formatDate(row.deadline)}</span> },
-            { key: 'priorityLevel', label: 'Priority', render: (row) => <StatusBadge value={row.priorityLevel} /> },
-            { key: 'riskScore', label: 'Risk Score' },
-            { key: 'trackingStatus', label: 'Status', render: (row) => <StatusBadge value={row.trackingStatus} /> }
-          ]}
-        />
-        {user?.role === 'viewer' && (
-          <p className="mt-2 text-xs font-semibold text-slate-500">Click a case row to view detailed read-only evidence and audit activity.</p>
-        )}
-      </section>
+      <TrustedActionRegister rows={trustedRows} />
 
       <section className="rounded-md border border-slate-200 bg-white p-5 shadow-gov">
         <h2 className="text-lg font-extrabold text-navy">Recent Activity</h2>
@@ -599,7 +577,7 @@ function NotificationCard({ title, tone, count, rows, formatter }) {
       <div className="mt-3 space-y-2">
         {rows.length ? (
           rows.slice(0, 4).map((item) => (
-            <p key={item._id} className="rounded bg-white px-2 py-1.5 text-xs font-semibold text-slate-700">
+            <p key={item._id} className="break-words rounded bg-white px-2 py-1.5 text-xs font-semibold text-slate-700">
               {formatter(item)}
             </p>
           ))

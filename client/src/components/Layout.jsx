@@ -35,7 +35,7 @@ export default function Layout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen overflow-x-clip bg-slate-50">
       <aside className="fixed inset-y-0 left-0 z-30 hidden w-64 border-r border-slate-200 bg-navy text-white lg:block">
         <div className="flex h-20 items-center gap-3 border-b border-white/10 px-6">
           <div className="grid h-10 w-10 place-items-center rounded-md border border-gold/50 bg-white/10">
@@ -68,27 +68,27 @@ export default function Layout({ children }) {
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
-          <div className="flex min-h-20 flex-col justify-center gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div className="flex items-start gap-3">
+        <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+          <div className="flex min-h-20 flex-col justify-center gap-3 px-3 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div className="flex min-w-0 items-start gap-3">
               <button
                 onClick={() => setMobileNavOpen((current) => !current)}
-                className="focus-ring mt-0.5 rounded-md border border-slate-200 p-2 text-slate-600 lg:hidden"
+                className="focus-ring mt-0.5 shrink-0 rounded-md border border-slate-200 p-2 text-slate-600 lg:hidden"
                 aria-label="Toggle menu"
               >
                 {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
               </button>
-              <div>
-              <p className="text-xs font-bold uppercase tracking-wide text-gold">Government of India - Ministry of Law & Justice</p>
-              <div className="mt-1 flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5 text-navy" />
-                <p className="text-sm font-semibold capitalize text-slate-600">{breadcrumb(location.pathname)}</p>
-              </div>
+              <div className="min-w-0">
+                <p className="text-[11px] font-bold uppercase tracking-wide text-gold sm:text-xs">Government of India - Ministry of Law & Justice</p>
+                <div className="mt-1 flex min-w-0 items-start gap-2 sm:items-center">
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-navy sm:mt-0 sm:h-5 sm:w-5" />
+                  <p className="min-w-0 break-words text-sm font-semibold capitalize text-slate-600">{breadcrumb(location.pathname)}</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-sm font-bold text-navy">{user?.name}</p>
+            <div className="flex items-center gap-3 self-end sm:self-auto">
+              <div className="max-w-[10rem] text-right sm:max-w-none">
+                <p className="truncate text-sm font-bold text-navy">{user?.name}</p>
                 <p className="text-xs uppercase tracking-wide text-slate-500">{user?.role}</p>
               </div>
               <button onClick={handleLogout} className="focus-ring rounded-md border border-slate-200 p-2 text-slate-600 hover:bg-slate-50" title="Logout">
@@ -121,7 +121,7 @@ export default function Layout({ children }) {
           )}
         </header>
 
-        <main className="px-4 py-6 sm:px-6">{children}</main>
+        <main className="px-3 py-5 sm:px-6 sm:py-6">{children}</main>
       </div>
     </div>
   );

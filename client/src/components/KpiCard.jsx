@@ -5,7 +5,7 @@ export default function KpiCard({ label, value, icon: Icon, tone = 'navy' }) {
       <div className="flex items-start justify-between">
         <div>
           <p className="text-sm font-semibold text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-extrabold text-navy">{value ?? 0}</p>
+          <p className="mt-2 text-2xl font-extrabold text-navy sm:text-3xl">{value ?? 0}</p>
         </div>
         {Icon && (
           <div className={`grid h-11 w-11 place-items-center rounded-md ${color}`}>
@@ -16,4 +16,3 @@ export default function KpiCard({ label, value, icon: Icon, tone = 'navy' }) {
     </div>
   );
 }
-
