@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2 } from 'lucide-react';
 import { api, friendlyError } from '../utils/api';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
+import { formatDate } from '../utils/date';
 import UploadDropzone from '../components/UploadDropzone';
 import StepTracker from '../components/StepTracker';
 import ConfidenceBar from '../components/ConfidenceBar';
@@ -111,6 +112,14 @@ export default function UploadPage() {
                   <p className="mt-1 font-semibold text-slate-800">{result.case[field]}</p>
                 </div>
               ))}
+              <div>
+                <p className="text-xs font-bold uppercase text-slate-500">Date Of Order</p>
+                <p className="mt-1 font-semibold text-slate-800">{formatDate(result.case.dateOfOrder)}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold uppercase text-slate-500">Directives Found</p>
+                <p className="mt-1 font-semibold text-slate-800">{result.extraction?.extractionStats?.directivesFound || result.directives.length}</p>
+              </div>
             </div>
           </div>
 
@@ -121,6 +130,9 @@ export default function UploadPage() {
                   <div>
                     <p className="text-sm font-bold text-navy">Directive {directive.directiveNumber}</p>
                     <p className="mt-2 bg-yellow-100 px-2 py-1 text-sm leading-6 text-slate-700">{directive.sourceText}</p>
+                    <p className="mt-3 text-xs font-semibold text-slate-600">
+                      Timeline: {formatDate(directive.deadline)} {directive.deadlineInferred ? '(inferred)' : '(explicit)'} - {directive.deadlineNote}
+                    </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <ConfidenceBar value={directive.confidenceScore} />
@@ -140,4 +152,3 @@ export default function UploadPage() {
     </div>
   );
 }
-

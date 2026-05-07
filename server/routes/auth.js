@@ -29,6 +29,9 @@ router.post('/register', async (req, res, next) => {
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required.' });
     }
+    if (role !== 'viewer') {
+      return res.status(403).json({ message: 'Privileged role registration is restricted.' });
+    }
 
     const exists = await User.findOne({ email });
     if (exists) {
@@ -36,7 +39,7 @@ router.post('/register', async (req, res, next) => {
     }
 
     const passwordHash = await bcrypt.hash(password, 12);
-    const user = await User.create({ name, email, passwordHash, role, department });
+    const user = await User.create({ name, email, passwordHash, role: 'viewer', department });
     res.status(201).json({ token: signToken(user), user: publicUser(user) });
   } catch (error) {
     next(error);
@@ -63,4 +66,3 @@ router.get('/me', protect, (req, res) => {
 });
 
 export default router;
-

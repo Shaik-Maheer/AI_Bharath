@@ -1,4 +1,5 @@
 import express from 'express';
+import mongoose from 'mongoose';
 import Directive from '../models/Directive.js';
 import AuditLog from '../models/AuditLog.js';
 import { protect, authorize } from '../middleware/auth.js';
@@ -13,9 +14,33 @@ const editableFields = [
   'deadline',
   'priorityLevel',
   'riskLevel',
+  'riskScore',
   'riskNote',
   'dependsOn'
 ];
+
+async function normalizeDependencies(dependsOn, directive) {
+  if (!Array.isArray(dependsOn)) {
+    throw new Error('Dependencies must be provided as an array.');
+  }
+
+  const normalizedIds = [...new Set(dependsOn.map((id) => String(id).trim()).filter(Boolean))];
+  if (normalizedIds.some((id) => id === String(directive._id))) {
+    throw new Error('A directive cannot depend on itself.');
+  }
+  if (normalizedIds.some((id) => !mongoose.Types.ObjectId.isValid(id))) {
+    throw new Error('Dependencies include an invalid directive identifier.');
+  }
+
+  if (!normalizedIds.length) return [];
+
+  const existing = await Directive.countDocuments({ _id: { $in: normalizedIds }, caseId: directive.caseId });
+  if (existing !== normalizedIds.length) {
+    throw new Error('Dependencies must reference directives from the same case.');
+  }
+
+  return normalizedIds;
+}
 
 router.get('/case/:caseId', protect, async (req, res, next) => {
   try {
@@ -39,15 +64,31 @@ router.put('/:id/verify', protect, authorize('admin', 'reviewer'), async (req, r
       return res.status(400).json({ message: 'Choose approve, edit, or reject for verification.' });
     }
 
+    const normalizedUpdates = { ...updates };
     const changes = [];
     if (decision === 'edited') {
+      if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'dependsOn')) {
+        try {
+          normalizedUpdates.dependsOn = await normalizeDependencies(normalizedUpdates.dependsOn, directive);
+        } catch (validationError) {
+          return res.status(400).json({ message: validationError.message });
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(normalizedUpdates, 'riskScore')) {
+        const riskScore = Number(normalizedUpdates.riskScore);
+        if (!Number.isFinite(riskScore) || riskScore < 0 || riskScore > 100) {
+          return res.status(400).json({ message: 'Risk score must be between 0 and 100.' });
+        }
+        normalizedUpdates.riskScore = Math.round(riskScore);
+      }
+
       editableFields.forEach((field) => {
-        if (Object.prototype.hasOwnProperty.call(updates, field)) {
+        if (Object.prototype.hasOwnProperty.call(normalizedUpdates, field)) {
           const oldValue = JSON.stringify(directive[field] ?? '');
-          const newValue = JSON.stringify(updates[field] ?? '');
+          const newValue = JSON.stringify(normalizedUpdates[field] ?? '');
           if (oldValue !== newValue) {
             changes.push({ field, oldValue, newValue, editedBy: req.user._id, reason });
-            directive[field] = updates[field];
+            directive[field] = normalizedUpdates[field];
           }
         }
       });
@@ -83,6 +124,9 @@ router.put('/:id/status', protect, authorize('admin', 'reviewer'), async (req, r
 
     const directive = await Directive.findById(req.params.id);
     if (!directive) return res.status(404).json({ message: 'Directive could not be found.' });
+    if (!['approved', 'edited'].includes(directive.verificationStatus)) {
+      return res.status(400).json({ message: 'Only approved directives can move through action tracking.' });
+    }
 
     const oldStatus = directive.trackingStatus;
     directive.trackingStatus = status;
@@ -124,4 +168,3 @@ router.get('/:id/audit', protect, async (req, res, next) => {
 });
 
 export default router;
-

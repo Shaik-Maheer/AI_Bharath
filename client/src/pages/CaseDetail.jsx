@@ -5,6 +5,7 @@ import { api, friendlyError } from '../utils/api';
 import { daysRemaining, formatDate } from '../utils/date';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
+import { useAuth } from '../context/AuthContext';
 import SortableTable from '../components/SortableTable';
 import StatusBadge from '../components/StatusBadge';
 import RiskModal from '../components/RiskModal';
@@ -12,6 +13,18 @@ import DependencyGraph from '../components/DependencyGraph';
 import EmptyState from '../components/EmptyState';
 
 const tabs = ['Overview', 'Directives', 'Audit Trail', 'Dependency Map'];
+
+function auditChangeSummary(item) {
+  const changeList = item.details?.changes;
+  if (Array.isArray(changeList) && changeList.length) {
+    return changeList.map((change) => `${change.field}: ${change.oldValue || '""'} -> ${change.newValue || '""'}`).join(' | ');
+  }
+  if (item.details?.field) {
+    return `${item.details.field}: ${item.details.oldValue || '""'} -> ${item.details.newValue || '""'}`;
+  }
+  if (item.details?.reason) return item.details.reason;
+  return '';
+}
 
 export default function CaseDetail() {
   const { caseId } = useParams();
@@ -23,6 +36,7 @@ export default function CaseDetail() {
   const [riskText, setRiskText] = useState('');
   const [auditFilter, setAuditFilter] = useState({ action: '', user: '' });
   const { notify } = useToast();
+  const { user } = useAuth();
 
   async function load() {
     try {
@@ -81,11 +95,9 @@ export default function CaseDetail() {
       formatDate(item.performedAt),
       item.performedBy?.name || '',
       item.action,
-      item.details?.field || '',
-      item.details?.oldValue || '',
-      item.details?.newValue || ''
+      auditChangeSummary(item)
     ]);
-    const csv = [['Timestamp', 'User', 'Action', 'Field Changed', 'Old Value', 'New Value'], ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const csv = [['Timestamp', 'User', 'Action', 'Details'], ...rows].map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
     const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
     const link = document.createElement('a');
     link.href = url;
@@ -102,6 +114,11 @@ export default function CaseDetail() {
         <h1 className="text-2xl font-extrabold text-navy">{caseData.caseTitle}</h1>
         <p className="mt-1 text-sm text-slate-600">{caseData.courtName} - {caseData.caseNumber}</p>
       </section>
+      {user?.role === 'viewer' && (
+        <div className="rounded-md border border-blue-200 bg-blue-50 px-4 py-3 text-sm font-semibold text-blue-900">
+          Viewer access: read-only trusted monitoring view. Verification and status updates are restricted to reviewer/admin roles.
+        </div>
+      )}
 
       <div className="flex gap-2 overflow-x-auto border-b border-slate-200">
         {tabs.map((tab) => (
@@ -161,13 +178,18 @@ export default function CaseDetail() {
               }
             },
             { key: 'priorityLevel', label: 'Priority', render: (row) => <StatusBadge value={row.priorityLevel} /> },
+            { key: 'riskScore', label: 'Risk Score', render: (row) => row.riskScore ?? '-' },
             {
               key: 'trackingStatus',
               label: 'Status',
               render: (row) => (
-                <select value={row.trackingStatus} onChange={(event) => updateStatus(row, event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
-                  {['Pending', 'In Progress', 'Completed', 'Escalated'].map((item) => <option key={item}>{item}</option>)}
-                </select>
+                user?.role === 'viewer' ? (
+                  <StatusBadge value={row.trackingStatus} />
+                ) : (
+                  <select value={row.trackingStatus} onChange={(event) => updateStatus(row, event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
+                    {['Pending', 'In Progress', 'Completed', 'Escalated'].map((item) => <option key={item}>{item}</option>)}
+                  </select>
+                )
               )
             },
             {
@@ -209,9 +231,7 @@ export default function CaseDetail() {
               { key: 'performedAt', label: 'Timestamp', render: (row) => formatDate(row.performedAt) },
               { key: 'performedBy', label: 'User', accessor: (row) => row.performedBy?.name || 'System' },
               { key: 'action', label: 'Action', render: (row) => row.action.replace(/_/g, ' ') },
-              { key: 'field', label: 'Field Changed', accessor: (row) => row.details?.field || '' },
-              { key: 'oldValue', label: 'Old Value', accessor: (row) => row.details?.oldValue || '' },
-              { key: 'newValue', label: 'New Value', accessor: (row) => row.details?.newValue || '' }
+              { key: 'details', label: 'Details', render: (row) => <span className="text-xs leading-5">{auditChangeSummary(row) || '-'}</span> }
             ]}
           />
         </section>
@@ -240,4 +260,3 @@ function Meta({ label, value }) {
     </div>
   );
 }
-

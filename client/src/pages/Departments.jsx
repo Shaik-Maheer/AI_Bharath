@@ -83,6 +83,7 @@ export default function Departments() {
             { key: 'actionDescription', label: 'Action' },
             { key: 'deadline', label: 'Deadline', render: (row) => formatDate(row.deadline) },
             { key: 'priorityLevel', label: 'Priority', render: (row) => <StatusBadge value={row.priorityLevel} /> },
+            { key: 'riskScore', label: 'Risk Score' },
             { key: 'trackingStatus', label: 'Status', render: (row) => <StatusBadge value={row.trackingStatus} /> }
           ]}
         />
@@ -90,4 +91,3 @@ export default function Departments() {
     </div>
   );
 }
-

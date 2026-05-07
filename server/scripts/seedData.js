@@ -102,6 +102,7 @@ export async function seedDatabase({ reset = true } = {}) {
       deadline: new Date('2024-03-26T00:00:00.000Z'),
       priorityLevel: 'High',
       riskLevel: 'High',
+      riskScore: 84,
       riskNote: 'Delay can affect essential medicine availability.',
       deadlineNote: 'Explicit 21 day deadline.',
       whatIfRisk: 'If delayed beyond the deadline: HIGH risk of adverse public health findings. Recommended: immediate escalation to Mission Director.'
@@ -121,6 +122,7 @@ export async function seedDatabase({ reset = true } = {}) {
       deadlineInferred: true,
       priorityLevel: 'Medium',
       riskLevel: 'Medium',
+      riskScore: 62,
       riskNote: 'Deadline inferred; reviewer should confirm.',
       deadlineNote: 'Thirty-day review window inferred.',
       whatIfRisk: 'If delayed beyond the deadline: procurement bottleneck may become court-reportable non-compliance.'
@@ -140,6 +142,7 @@ export async function seedDatabase({ reset = true } = {}) {
       deadlineInferred: true,
       priorityLevel: 'Medium',
       riskLevel: 'Medium',
+      riskScore: 60,
       riskNote: 'Low confidence appeal extraction requires careful human review.',
       deadlineNote: 'Limitation review window inferred.',
       whatIfRisk: 'If delayed beyond the deadline: appeal rights may be prejudiced, while compliance obligations continue.'

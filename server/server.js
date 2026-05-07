@@ -40,6 +40,26 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.get('/', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'AdhikarLoop API',
+    message: 'Backend is running. Open the frontend at http://localhost:5173',
+    endpoints: {
+      health: '/api/health',
+      login: '/api/auth/login'
+    }
+  });
+});
+
+app.get('/api', (_req, res) => {
+  res.json({
+    ok: true,
+    service: 'AdhikarLoop API',
+    health: '/api/health'
+  });
+});
+
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'AdhikarLoop API' });
 });

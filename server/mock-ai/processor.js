@@ -79,6 +79,7 @@ function riskFor(text, deadlineInferred) {
   if (lower.includes('contempt') || lower.includes('shall release') || lower.includes('compensation')) {
     return {
       riskLevel: 'Critical',
+      riskScore: 92,
       priorityLevel: 'High',
       riskNote: 'Delay may expose the department to contempt proceedings and citizen hardship.'
     };
@@ -86,6 +87,7 @@ function riskFor(text, deadlineInferred) {
   if (lower.includes('protection') || lower.includes('handover') || lower.includes('mutation')) {
     return {
       riskLevel: 'High',
+      riskScore: 82,
       priorityLevel: 'High',
       riskNote: 'Delay can block implementation of the court order and trigger escalation.'
     };
@@ -93,12 +95,14 @@ function riskFor(text, deadlineInferred) {
   if (deadlineInferred) {
     return {
       riskLevel: 'Medium',
+      riskScore: 64,
       priorityLevel: 'Medium',
       riskNote: 'Deadline is inferred and should be confirmed by the reviewing officer.'
     };
   }
   return {
     riskLevel: 'Medium',
+    riskScore: 58,
     priorityLevel: 'Medium',
     riskNote: 'Monitor for timely compliance and documentary proof.'
   };
@@ -171,35 +175,154 @@ function sampleResponse() {
   };
 }
 
-function parseFallback(text) {
-  const orderDateMatch = text.match(/Date of Order:\s*([^\n]+)/i);
-  const orderDate = orderDateMatch ? new Date(orderDateMatch[1]) : new Date();
-  const sentences = text
-    .split(/\n+/)
-    .map((line) => line.trim())
-    .filter((line) => /(shall|directed|may review|file an appeal|submit|release|complete)/i.test(line))
-    .slice(0, 8);
+function normalizeLine(line) {
+  return line.replace(/\s+/g, ' ').trim();
+}
 
-  const sourceTexts = sentences.length
-    ? sentences
-    : ['The concerned department shall review the judgment and prepare a compliance action note within 30 days.'];
+function parseDateValue(raw) {
+  if (!raw) return null;
+  const direct = new Date(raw);
+  if (!Number.isNaN(direct.getTime())) return direct;
+
+  const numeric = raw.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/);
+  if (numeric) {
+    const day = Number(numeric[1]);
+    const month = Number(numeric[2]) - 1;
+    const year = Number(numeric[3].length === 2 ? `20${numeric[3]}` : numeric[3]);
+    const parsed = new Date(Date.UTC(year, month, day));
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
+
+  return null;
+}
+
+function extractOrderDate(text) {
+  const patterns = [
+    /Date of Order\s*[:\-]\s*([^\n]+)/i,
+    /Pronounced on\s*[:\-]\s*([^\n]+)/i,
+    /Dated\s*[:\-]\s*([^\n]+)/i,
+    /Order dated\s*([^\n,;.]+)/i
+  ];
+
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    const parsed = parseDateValue(match?.[1]?.trim());
+    if (parsed) return parsed;
+  }
+
+  return new Date();
+}
+
+function extractCourtName(text) {
+  const match = text.match(/IN THE\s+([^\n]+)/i);
+  return match ? normalizeLine(match[1]) : 'Court name pending verification';
+}
+
+function extractCaseNumber(text) {
+  return (
+    text.match(/(Writ Petition|WP|Civil Appeal|Special Leave Petition|Case)\s*No\.?\s*[^\n]+/i)?.[0]?.trim() || 'Case number pending verification'
+  );
+}
+
+function extractPartiesAndTitle(text) {
+  const lines = text.split(/\n+/).map(normalizeLine).filter(Boolean);
+  let petitioner = '';
+  let respondent = '';
+
+  const titleMatch = text.match(/([^\n]{3,120})\s+(?:v(?:s\.?|\.?)|versus)\s+([^\n]{3,120})/i);
+  if (titleMatch) {
+    petitioner = normalizeLine(titleMatch[1]);
+    respondent = normalizeLine(titleMatch[2]);
+  } else {
+    const versusIndex = lines.findIndex((line) => /^(versus|vs\.?|v\.?)$/i.test(line));
+    if (versusIndex > 0 && versusIndex < lines.length - 1) {
+      petitioner = lines[versusIndex - 1].replace(/\.*\s*petitioners?$/i, '').trim();
+      respondent = lines[versusIndex + 1].replace(/\.*\s*respondents?$/i, '').trim();
+    }
+  }
+
+  petitioner = petitioner || text.match(/^\s*([^\n]+?)\s*\n\s*\.{2,}\s*Petitioners?/im)?.[1]?.trim() || 'Petitioner pending verification';
+  respondent = respondent || text.match(/^\s*([^\n]+?)\s*\n\s*\.{2,}\s*Respondents?/im)?.[1]?.trim() || 'Respondent pending verification';
+
+  const caseTitle =
+    petitioner.includes('pending verification') || respondent.includes('pending verification')
+      ? 'Uploaded Judgment for Compliance Review'
+      : `${petitioner} v. ${respondent}`;
+
+  return { petitioner, respondent, caseTitle };
+}
+
+function isActionableSentence(sentence) {
+  const lower = sentence.toLowerCase();
+  const hasActionVerb =
+    /(shall|must|is directed to|are directed to|may review|file an appeal|submit|release|complete|ensure|conduct|prepare|furnish|implement|handover|provide)/i.test(sentence);
+  const excluded = /(petition is disposed|rule is made absolute|no order as to costs|heard learned counsel|non-compliance may invite proceedings)/i.test(lower);
+  return hasActionVerb && !excluded && sentence.length > 35;
+}
+
+function extractActionableSentences(text) {
+  const lines = text.split(/\n+/).map(normalizeLine).filter(Boolean);
+  const candidates = [];
+
+  lines.forEach((line, lineIndex) => {
+    const segments = line.split(/(?<=[.?!])\s+(?=[A-Z])/).map(normalizeLine).filter(Boolean);
+    segments.forEach((segment) => {
+      if (isActionableSentence(segment)) {
+        candidates.push({ sentence: segment, sourceParagraph: lineIndex + 1 });
+      }
+    });
+  });
+
+  const unique = [];
+  for (const item of candidates) {
+    if (!unique.some((existing) => existing.sentence === item.sentence)) unique.push(item);
+  }
+
+  return unique.slice(0, 10);
+}
+
+function confidenceFor(sentence, index) {
+  let score = 70;
+  if (/shall|must|is directed to|are directed to/i.test(sentence)) score += 12;
+  if (/within\s+\d+\s+days|weekly|forthwith|immediately/i.test(sentence)) score += 8;
+  if (/(department|commissioner|collector|registrar|authority)/i.test(sentence)) score += 6;
+  if (/may review|if so advised/i.test(sentence)) score -= 8;
+  score -= Math.min(index, 6);
+  return Math.max(62, Math.min(97, score));
+}
+
+function parseFallback(text) {
+  const orderDate = extractOrderDate(text);
+  const { petitioner, respondent, caseTitle } = extractPartiesAndTitle(text);
+  const actionable = extractActionableSentences(text);
+  const sourceTexts = actionable.length
+    ? actionable
+    : [{ sentence: 'The concerned department shall review the judgment and prepare a compliance action note within 30 days.', sourceParagraph: 1 }];
 
   return {
     caseDetails: {
-      caseTitle: text.match(/(.+)\s+Versus\s+(.+)/is)?.[0]?.slice(0, 90) || 'Uploaded Judgment for Compliance Review',
-      courtName: text.match(/IN THE\s+(.+)/i)?.[1]?.trim() || 'Court name pending verification',
-      caseNumber: text.match(/(Writ Petition|WP|Civil Appeal|Case)\s*No\.?\s*[^\n]+/i)?.[0] || 'Case number pending verification',
-      petitioner: 'Petitioner pending verification',
-      respondent: 'Respondent pending verification',
+      caseTitle,
+      courtName: extractCourtName(text),
+      caseNumber: extractCaseNumber(text),
+      petitioner,
+      respondent,
       dateOfOrder: Number.isNaN(orderDate.getTime()) ? new Date() : orderDate
     },
-    directives: sourceTexts.map((line, index) =>
-      buildDirective(index + 1, line, index + 1, Number.isNaN(orderDate.getTime()) ? new Date() : orderDate, 72 + ((index * 7) % 24))
+    directives: sourceTexts.map((item, index) =>
+      buildDirective(
+        index + 1,
+        item.sentence,
+        item.sourceParagraph,
+        Number.isNaN(orderDate.getTime()) ? new Date() : orderDate,
+        confidenceFor(item.sentence, index)
+      )
     ),
     extractionStats: {
-      confidenceAverage: 78,
+      confidenceAverage: sourceTexts.length
+        ? Math.round(sourceTexts.reduce((sum, item, index) => sum + confidenceFor(item.sentence || item, index), 0) / sourceTexts.length)
+        : 78,
       directivesFound: sourceTexts.length,
-      processingNotes: 'Generic legal directive extraction completed. Human verification required for metadata.'
+      processingNotes: 'Generic legal directive extraction completed. Only actionable directions were selected for human verification.'
     }
   };
 }
@@ -216,4 +339,3 @@ export async function processJudgmentText(text) {
 }
 
 export { departments };
-

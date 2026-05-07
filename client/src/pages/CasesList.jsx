@@ -55,14 +55,16 @@ export default function CasesList() {
           <h1 className="text-2xl font-extrabold text-navy">Cases</h1>
           <p className="mt-1 text-sm text-slate-600">Judgment uploads, extraction state, and verification entry points.</p>
         </div>
-        <Link to="/cases/upload" className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-bold text-white">
-          <FileUp className="h-4 w-4" />
-          Upload New Judgment
-        </Link>
+        {user?.role !== 'viewer' && (
+          <Link to="/cases/upload" className="focus-ring inline-flex items-center justify-center gap-2 rounded-md bg-navy px-4 py-2.5 text-sm font-bold text-white">
+            <FileUp className="h-4 w-4" />
+            Upload New Judgment
+          </Link>
+        )}
       </div>
 
       <section className="rounded-md border border-slate-200 bg-white p-4 shadow-gov">
-        <div className="grid gap-3 md:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-6">
           <input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Search title or number" className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold md:col-span-2" />
           <select value={filters.status} onChange={(event) => setFilters({ ...filters, status: event.target.value })} className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold">
             <option value="">All statuses</option>
@@ -71,6 +73,7 @@ export default function CasesList() {
             <option value="active">Active</option>
           </select>
           <input type="date" value={filters.startDate} onChange={(event) => setFilters({ ...filters, startDate: event.target.value })} className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold" />
+          <input type="date" value={filters.endDate} onChange={(event) => setFilters({ ...filters, endDate: event.target.value })} className="rounded-md border border-slate-200 px-3 py-2 text-sm outline-none focus:border-gold" />
           <button onClick={load} disabled={loading} className="focus-ring rounded-md border border-gold px-4 py-2 text-sm font-bold text-navy disabled:opacity-60">
             {loading ? 'Loading...' : 'Apply Filters'}
           </button>
@@ -95,9 +98,13 @@ export default function CasesList() {
             render: (row) => (
               <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
                 {row.status === 'pending_verification' && (
-                  <Link to={`/cases/${row.caseId}/verify`} className="rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy">
-                    Verify
-                  </Link>
+                  user?.role !== 'viewer' ? (
+                    <Link to={`/cases/${row.caseId}/verify`} className="rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy">
+                      Verify
+                    </Link>
+                  ) : (
+                    <span className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500">Read Only</span>
+                  )
                 )}
                 {user?.role === 'admin' && (
                   <button onClick={() => setDeleteTarget(row)} className="rounded-md border border-red-200 p-1.5 text-red-700" title="Delete case">
@@ -121,4 +128,3 @@ export default function CasesList() {
     </div>
   );
 }
-

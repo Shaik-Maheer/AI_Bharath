@@ -24,6 +24,7 @@ function editableFrom(directive) {
     deadline: dateInputValue(directive.deadline),
     priorityLevel: directive.priorityLevel,
     riskLevel: directive.riskLevel,
+    riskScore: directive.riskScore ?? 60,
     riskNote: directive.riskNote,
     dependsOn: (directive.dependsOn || []).map((item) => item._id || item)
   };
@@ -88,7 +89,11 @@ export default function VerifyPage() {
     if (!selected) return;
     setSaving(true);
     try {
-      const updates = { ...form, deadline: form.deadline ? new Date(form.deadline) : selected.deadline };
+      const updates = {
+        ...form,
+        deadline: form.deadline ? new Date(form.deadline) : selected.deadline,
+        riskScore: form.riskScore === '' || form.riskScore === null || form.riskScore === undefined ? selected.riskScore ?? 60 : Number(form.riskScore)
+      };
       await api.put(`/directives/${selected._id}/verify`, { decision, updates, reason: decision === 'edited' ? 'Reviewer confirmed field updates.' : '' });
       notify(decision === 'rejected' ? 'Directive rejected.' : 'Directive verified.');
       setRejectTarget(null);
@@ -157,8 +162,12 @@ export default function VerifyPage() {
                 <div>
                   <h2 className="text-lg font-extrabold text-navy">Directive {selected.directiveNumber}</h2>
                   <p className="mt-2 bg-yellow-100 px-2 py-1 text-sm leading-6 text-slate-700">{selected.sourceText}</p>
+                  <p className="mt-2 text-xs font-semibold text-slate-500">Source paragraph: {selected.sourceParagraph}</p>
                 </div>
-                <StatusBadge value={selected.verificationStatus} />
+                <div className="space-y-2">
+                  <ConfidenceBar value={selected.confidenceScore} />
+                  <StatusBadge value={selected.verificationStatus} />
+                </div>
               </div>
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -194,6 +203,17 @@ export default function VerifyPage() {
                     {risks.map((item) => <option key={item}>{item}</option>)}
                   </select>
                 </label>
+                <label className="text-sm font-bold text-navy">
+                  Risk Score (0-100)
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={form.riskScore ?? ''}
+                    onChange={(event) => setField('riskScore', event.target.value === '' ? '' : Number(event.target.value))}
+                    className="mt-2 w-full rounded-md border border-slate-200 px-3 py-2 font-normal outline-none focus:border-gold"
+                  />
+                </label>
               </div>
 
               <label className="mt-4 block text-sm font-bold text-navy">
@@ -204,6 +224,7 @@ export default function VerifyPage() {
                 Risk Note
                 <textarea value={form.riskNote || ''} onChange={(event) => setField('riskNote', event.target.value)} rows={2} className="mt-2 w-full rounded-md border border-slate-200 p-3 font-normal outline-none focus:border-gold" />
               </label>
+              <p className="mt-2 text-xs text-slate-500">{selected.deadlineNote}</p>
 
               <div className="mt-4 rounded-md border border-slate-200 p-4">
                 <p className="text-sm font-bold text-navy">Dependencies</p>
@@ -252,4 +273,3 @@ export default function VerifyPage() {
     </div>
   );
 }
-

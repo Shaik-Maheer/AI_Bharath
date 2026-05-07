@@ -153,9 +153,14 @@ router.put('/:caseId/submit-verified', protect, authorize('admin', 'reviewer'), 
       return res.status(400).json({ message: 'All directives must be verified or rejected before submission.' });
     }
 
-    foundCase.status = 'verified';
+    const approvedCount = await Directive.countDocuments({ caseId: foundCase._id, verificationStatus: { $in: ['approved', 'edited'] } });
+    if (approvedCount === 0) {
+      return res.status(400).json({ message: 'At least one directive must be approved or edited to move this case forward.' });
+    }
+
+    foundCase.status = 'active';
     await foundCase.save();
-    await createAudit(foundCase._id, null, 'case_verified', req.user._id, {}, req.ip);
+    await createAudit(foundCase._id, null, 'case_verified', req.user._id, { approvedCount }, req.ip);
     res.json({ case: foundCase });
   } catch (error) {
     next(error);

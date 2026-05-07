@@ -52,6 +52,7 @@ const directiveSchema = new mongoose.Schema({
   deadlineNote: { type: String, default: '' },
   priorityLevel: { type: String, enum: ['High', 'Medium', 'Low'], default: 'Medium' },
   riskLevel: { type: String, enum: ['Critical', 'High', 'Medium', 'Low'], default: 'Medium' },
+  riskScore: { type: Number, min: 0, max: 100, default: 60 },
   riskNote: { type: String, default: '' },
   verificationStatus: { type: String, enum: ['pending', 'approved', 'edited', 'rejected'], default: 'pending' },
   verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -65,4 +66,3 @@ const directiveSchema = new mongoose.Schema({
 });
 
 export default mongoose.model('Directive', directiveSchema);
-

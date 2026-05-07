@@ -3,10 +3,10 @@ import { BarChart3, Briefcase, Building2, FileUp, Gavel, LogOut, ShieldCheck } f
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: BarChart3 },
-  { to: '/cases', label: 'Cases', icon: Briefcase },
-  { to: '/cases/upload', label: 'Upload', icon: FileUp },
-  { to: '/departments', label: 'Departments', icon: Building2 }
+  { to: '/dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin', 'reviewer', 'viewer'] },
+  { to: '/cases', label: 'Cases', icon: Briefcase, roles: ['admin', 'reviewer', 'viewer'] },
+  { to: '/cases/upload', label: 'Upload', icon: FileUp, roles: ['admin', 'reviewer'] },
+  { to: '/departments', label: 'Departments', icon: Building2, roles: ['admin', 'reviewer', 'viewer'] }
 ];
 
 function breadcrumb(pathname) {
@@ -19,6 +19,7 @@ export default function Layout({ children }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const visibleNav = navItems.filter((item) => item.roles.includes(user?.role));
 
   function handleLogout() {
     logout();
@@ -38,7 +39,7 @@ export default function Layout({ children }) {
           </div>
         </div>
         <nav className="space-y-1 px-3 py-5">
-          {navItems.map((item) => {
+          {visibleNav.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink
@@ -85,4 +86,3 @@ export default function Layout({ children }) {
     </div>
   );
 }
-
