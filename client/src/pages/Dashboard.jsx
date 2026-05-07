@@ -183,9 +183,15 @@ export default function Dashboard() {
   const highRiskRows = user?.role === 'viewer' ? viewerHighRiskRows : highRisk;
 
   async function escalateAction(action) {
+    const directiveRef = action.directiveId?._id || action.directiveId || action._id;
+    if (!directiveRef) {
+      notify('Directive reference is missing for this action.', 'error');
+      return;
+    }
+
     setEscalatingId(action._id);
     try {
-      await api.put(`/directives/${action._id}/status`, {
+      await api.put(`/directives/${directiveRef}/status`, {
         status: 'Escalated',
         note: 'Escalated by admin from dashboard overdue monitoring.'
       });
