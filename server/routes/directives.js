@@ -2,7 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import Directive from '../models/Directive.js';
 import AuditLog from '../models/AuditLog.js';
-import { protect, authorize } from '../middleware/auth.js';
+import { protect, authorize, ROLES } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -54,7 +54,7 @@ router.get('/case/:caseId', protect, async (req, res, next) => {
   }
 });
 
-router.put('/:id/verify', protect, authorize('admin', 'reviewer'), async (req, res, next) => {
+router.put('/:id/verify', protect, authorize(ROLES.REVIEWER), async (req, res, next) => {
   try {
     const directive = await Directive.findById(req.params.id);
     if (!directive) return res.status(404).json({ message: 'Directive could not be found.' });
@@ -115,11 +115,14 @@ router.put('/:id/verify', protect, authorize('admin', 'reviewer'), async (req, r
   }
 });
 
-router.put('/:id/status', protect, authorize('admin', 'reviewer'), async (req, res, next) => {
+router.put('/:id/status', protect, authorize(ROLES.ADMIN, ROLES.REVIEWER), async (req, res, next) => {
   try {
     const { status, note = '' } = req.body;
     if (!['Pending', 'In Progress', 'Completed', 'Escalated'].includes(status)) {
       return res.status(400).json({ message: 'Choose a valid tracking status.' });
+    }
+    if (status === 'Escalated' && req.user.role !== ROLES.ADMIN) {
+      return res.status(403).json({ message: 'Only admin can escalate overdue actions.' });
     }
 
     const directive = await Directive.findById(req.params.id);

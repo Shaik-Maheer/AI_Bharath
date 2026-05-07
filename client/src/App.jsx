@@ -8,6 +8,8 @@ import UploadPage from './pages/UploadPage';
 import VerifyPage from './pages/VerifyPage';
 import CaseDetail from './pages/CaseDetail';
 import Departments from './pages/Departments';
+import ReviewQueue from './pages/ReviewQueue';
+import UserManagement from './pages/UserManagement';
 
 function ProtectedRoute({ children, allowedRoles }) {
   const { user, loading } = useAuth();
@@ -30,7 +32,9 @@ export default function App() {
       <Route path="/cases" element={<ProtectedRoute><CasesList /></ProtectedRoute>} />
       <Route path="/cases/upload" element={<ProtectedRoute allowedRoles={['admin', 'reviewer']}><UploadPage /></ProtectedRoute>} />
       <Route path="/cases/:caseId" element={<ProtectedRoute><CaseDetail /></ProtectedRoute>} />
-      <Route path="/cases/:caseId/verify" element={<ProtectedRoute allowedRoles={['admin', 'reviewer']}><VerifyPage /></ProtectedRoute>} />
+      <Route path="/cases/:caseId/verify" element={<ProtectedRoute allowedRoles={['reviewer']}><VerifyPage /></ProtectedRoute>} />
+      <Route path="/review-queue" element={<ProtectedRoute allowedRoles={['reviewer']}><ReviewQueue /></ProtectedRoute>} />
+      <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><UserManagement /></ProtectedRoute>} />
       <Route path="/departments" element={<ProtectedRoute><Departments /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

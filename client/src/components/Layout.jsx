@@ -1,12 +1,14 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Briefcase, Building2, FileUp, Gavel, LogOut, ShieldCheck } from 'lucide-react';
+import { BarChart3, Briefcase, Building2, ClipboardCheck, FileUp, Gavel, LogOut, ShieldCheck, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: BarChart3, roles: ['admin', 'reviewer', 'viewer'] },
   { to: '/cases', label: 'Cases', icon: Briefcase, roles: ['admin', 'reviewer', 'viewer'] },
+  { to: '/review-queue', label: 'Review Queue', icon: ClipboardCheck, roles: ['reviewer'] },
   { to: '/cases/upload', label: 'Upload', icon: FileUp, roles: ['admin', 'reviewer'] },
-  { to: '/departments', label: 'Departments', icon: Building2, roles: ['admin', 'reviewer', 'viewer'] }
+  { to: '/departments', label: 'Departments', icon: Building2, roles: ['admin', 'reviewer', 'viewer'] },
+  { to: '/admin/users', label: 'User Admin', icon: Users, roles: ['admin'] }
 ];
 
 function breadcrumb(pathname) {

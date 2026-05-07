@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.js';
 import caseRoutes from './routes/cases.js';
 import directiveRoutes from './routes/directives.js';
 import dashboardRoutes from './routes/dashboard.js';
+import userRoutes from './routes/users.js';
 import { notFound, errorHandler } from './middleware/error.js';
 import { connectDatabase, disconnectDatabase } from './config/db.js';
 import { env } from './config/env.js';
@@ -65,6 +66,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/cases', caseRoutes);
 app.use('/api/directives', directiveRoutes);
 app.use('/api/dashboard', dashboardRoutes);

@@ -98,12 +98,12 @@ export default function CasesList() {
             render: (row) => (
               <div className="flex items-center gap-2" onClick={(event) => event.stopPropagation()}>
                 {row.status === 'pending_verification' && (
-                  user?.role !== 'viewer' ? (
+                  user?.role === 'reviewer' ? (
                     <Link to={`/cases/${row.caseId}/verify`} className="rounded-md border border-gold px-3 py-1.5 text-xs font-bold text-navy">
                       Verify
                     </Link>
                   ) : (
-                    <span className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500">Read Only</span>
+                    <span className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-bold text-slate-500">Reviewer Only</span>
                   )
                 )}
                 {user?.role === 'admin' && (

@@ -2,6 +2,12 @@ import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { env } from '../config/env.js';
 
+export const ROLES = Object.freeze({
+  ADMIN: 'admin',
+  REVIEWER: 'reviewer',
+  VIEWER: 'viewer'
+});
+
 export async function protect(req, res, next) {
   try {
     const header = req.headers.authorization || '';

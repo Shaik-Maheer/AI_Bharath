@@ -8,7 +8,7 @@ import mongoose from 'mongoose';
 import Case from '../models/Case.js';
 import Directive from '../models/Directive.js';
 import AuditLog from '../models/AuditLog.js';
-import { protect, authorize } from '../middleware/auth.js';
+import { protect, authorize, ROLES } from '../middleware/auth.js';
 import { processJudgmentText } from '../mock-ai/processor.js';
 
 const router = express.Router();
@@ -54,7 +54,7 @@ router.get('/sample-judgment', protect, async (_req, res, next) => {
   }
 });
 
-router.post('/upload', protect, authorize('admin', 'reviewer'), upload.single('pdf'), async (req, res, next) => {
+router.post('/upload', protect, authorize(ROLES.ADMIN, ROLES.REVIEWER), upload.single('pdf'), async (req, res, next) => {
   try {
     let extractedText = req.body.text || '';
     let pdfPath = '';
@@ -143,7 +143,7 @@ router.get('/:caseId', protect, async (req, res, next) => {
   }
 });
 
-router.put('/:caseId/submit-verified', protect, authorize('admin', 'reviewer'), async (req, res, next) => {
+router.put('/:caseId/submit-verified', protect, authorize(ROLES.REVIEWER), async (req, res, next) => {
   try {
     const foundCase = await findCase(req.params.caseId);
     if (!foundCase) return res.status(404).json({ message: 'Case could not be found.' });
@@ -167,7 +167,7 @@ router.put('/:caseId/submit-verified', protect, authorize('admin', 'reviewer'), 
   }
 });
 
-router.delete('/:caseId', protect, authorize('admin'), async (req, res, next) => {
+router.delete('/:caseId', protect, authorize(ROLES.ADMIN), async (req, res, next) => {
   try {
     const foundCase = await findCase(req.params.caseId);
     if (!foundCase) return res.status(404).json({ message: 'Case could not be found.' });

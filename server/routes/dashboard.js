@@ -2,6 +2,7 @@ import express from 'express';
 import Directive from '../models/Directive.js';
 import AuditLog from '../models/AuditLog.js';
 import { protect } from '../middleware/auth.js';
+import Case from '../models/Case.js';
 
 const router = express.Router();
 
@@ -70,6 +71,30 @@ router.get('/actions', protect, async (req, res, next) => {
       .sort({ deadline: 1, createdAt: -1 });
 
     res.json({ actions });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/verification-queue', protect, async (_req, res, next) => {
+  try {
+    const pendingCases = await Case.find({ status: 'pending_verification' })
+      .select('caseId caseTitle courtName dateOfOrder uploadedAt')
+      .sort({ uploadedAt: -1 });
+
+    const queue = await Promise.all(
+      pendingCases.map(async (caseItem) => {
+        const pending = await Directive.countDocuments({ caseId: caseItem._id, verificationStatus: 'pending' });
+        const approved = await Directive.countDocuments({ caseId: caseItem._id, verificationStatus: { $in: ['approved', 'edited'] } });
+        return {
+          ...caseItem.toObject(),
+          pendingDirectives: pending,
+          approvedDirectives: approved
+        };
+      })
+    );
+
+    res.json({ queue });
   } catch (error) {
     next(error);
   }

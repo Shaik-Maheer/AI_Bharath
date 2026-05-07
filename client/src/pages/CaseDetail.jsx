@@ -187,7 +187,7 @@ export default function CaseDetail() {
                   <StatusBadge value={row.trackingStatus} />
                 ) : (
                   <select value={row.trackingStatus} onChange={(event) => updateStatus(row, event.target.value)} className="rounded-md border border-slate-200 px-2 py-1 text-sm outline-none focus:border-gold">
-                    {['Pending', 'In Progress', 'Completed', 'Escalated'].map((item) => <option key={item}>{item}</option>)}
+                    {(user?.role === 'admin' ? ['Pending', 'In Progress', 'Completed', 'Escalated'] : ['Pending', 'In Progress', 'Completed']).map((item) => <option key={item}>{item}</option>)}
                   </select>
                 )
               )

@@ -120,13 +120,29 @@ All demo users use password: `Demo@1234`
 
 ## Role Permissions
 
-- `admin`: upload judgments, verify/edit/reject directives, submit verified cases, update tracking status, delete cases.
-- `reviewer`: upload judgments, verify/edit/reject directives, submit verified cases, update tracking status.
-- `viewer`: read-only access to dashboard, cases, departments, audit trail, and dependency view.
+- `admin`:
+  - Governance and oversight dashboards
+  - User management (create users, assign roles, assign departments)
+  - Monitor tracking and escalate overdue actions
+  - Access analytics and audit views
+  - Cannot perform reviewer verification decisions
+- `reviewer`:
+  - Access reviewer verification queue
+  - View source highlights and confidence scores
+  - Approve, edit, reject directives
+  - Submit verified cases into trusted action pipeline
+  - Update non-escalation tracking statuses
+- `viewer`:
+  - Read-only trusted dashboard and department action views
+  - Search/filter approved records and track statuses
+  - Cannot approve, reject, edit, delete, or escalate
 
 ## Demo Flow (Submission Walkthrough)
 
-1. Login as `admin` or `reviewer`.
+1. Login as role-specific user:
+   - Reviewer: verification workflow
+   - Admin: governance/monitoring/user management
+   - Viewer: read-only monitoring
 2. Open **Upload & Extraction** and upload a PDF or paste judgment text.
 3. Verify extracted case details:
    - Case title
@@ -135,18 +151,21 @@ All demo users use password: `Demo@1234`
    - Petitioner/respondent
    - Date of order
 4. Review extracted directives with source text, confidence score, and timelines.
-5. Open **Human Verification**:
+5. As **Reviewer**, open **Review Queue** / **Human Verification**:
    - Highlight source text
    - Approve / Edit / Reject each directive
    - Edit department, deadline, priority, risk, dependencies
-6. Submit verified case:
+6. Reviewer submits verified case:
    - Case moves forward only if at least one directive is approved/edited
    - Pending directives are blocked from submission
 7. Open **Dashboard (Trusted View)**:
    - Shows only approved/edited directives
    - Department-wise analytics
    - Important dates and structured action register
-8. Open case details to continue tracking:
+8. Tracking and monitoring:
+   - Admin can escalate overdue actions
+   - Reviewer/Admin can update normal tracking lifecycle
+9. Open case details to continue tracking:
    - Pending / In Progress / Completed
    - Dependency graph
    - Audit trail (verification, edits, status changes, timestamps)
