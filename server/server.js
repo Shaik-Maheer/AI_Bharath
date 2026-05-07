@@ -13,6 +13,7 @@ import { connectDatabase, disconnectDatabase } from './config/db.js';
 import { env } from './config/env.js';
 import { logger } from './config/logger.js';
 import { seedDatabase } from './scripts/seedData.js';
+import { syncAllActionPlansFromDirectives } from './services/actionPlanSync.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
@@ -108,6 +109,8 @@ async function startServer() {
       const result = await seedDatabase({ reset: false });
       logger.info(result.skipped ? 'Demo seed skipped; database already has users.' : 'Demo seed completed.');
     }
+    await syncAllActionPlansFromDirectives();
+    logger.info('Action plans synchronized from directive records.');
 
     httpServer = app.listen(env.port, () => {
       logger.info(`AdhikarLoop API running on port ${env.port} (${mode} database)`, {

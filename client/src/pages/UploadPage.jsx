@@ -5,6 +5,7 @@ import { api, friendlyError } from '../utils/api';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
 import { formatDate } from '../utils/date';
+import { publishDataUpdate } from '../utils/liveUpdates';
 import UploadDropzone from '../components/UploadDropzone';
 import StepTracker from '../components/StepTracker';
 import ConfidenceBar from '../components/ConfidenceBar';
@@ -61,6 +62,7 @@ export default function UploadPage() {
       setActiveStep(3);
       setUploadProgress(100);
       setResult(data);
+      publishDataUpdate('case-uploaded');
       notify('Extraction completed. Proceed to human verification.');
     } catch (error) {
       notify(friendlyError(error), 'error');

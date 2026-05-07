@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardCheck } from 'lucide-react';
 import { api, friendlyError } from '../utils/api';
 import { formatDate } from '../utils/date';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
+import { subscribeDataUpdates } from '../utils/liveUpdates';
 import SortableTable from '../components/SortableTable';
 import EmptyState from '../components/EmptyState';
 
@@ -14,7 +15,7 @@ export default function ReviewQueue() {
   const [loading, setLoading] = useState(true);
   const { notify } = useToast();
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
       const { data } = await api.get('/dashboard/verification-queue');
@@ -24,11 +25,33 @@ export default function ReviewQueue() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [notify]);
 
   useEffect(() => {
-    load();
-  }, []);
+    let active = true;
+    const loadSafely = () => {
+      if (!active) return;
+      load();
+    };
+    const onFocus = () => loadSafely();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadSafely();
+    };
+    const unsubscribe = subscribeDataUpdates(() => loadSafely());
+
+    loadSafely();
+    const id = setInterval(loadSafely, 15000);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+      unsubscribe();
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
 
   return (
     <div className="space-y-5">
@@ -66,4 +89,3 @@ export default function ReviewQueue() {
     </div>
   );
 }
-

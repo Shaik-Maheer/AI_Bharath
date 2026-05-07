@@ -10,6 +10,7 @@ import Directive from '../models/Directive.js';
 import AuditLog from '../models/AuditLog.js';
 import { protect, authorize, ROLES } from '../middleware/auth.js';
 import { processJudgmentText } from '../mock-ai/processor.js';
+import { deleteActionPlansByCase, syncActionPlansFromDirectives } from '../services/actionPlanSync.js';
 
 const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
@@ -88,6 +89,7 @@ router.post('/upload', protect, authorize(ROLES.ADMIN, ROLES.REVIEWER), upload.s
         trackingHistory: [{ status: 'Pending', updatedBy: req.user._id, note: 'Directive created from AI extraction.' }]
       }))
     );
+    await syncActionPlansFromDirectives(directives);
 
     await createAudit(createdCase._id, null, 'case_uploaded', req.user._id, { directives: directives.length }, req.ip);
 
@@ -173,6 +175,7 @@ router.delete('/:caseId', protect, authorize(ROLES.ADMIN), async (req, res, next
     if (!foundCase) return res.status(404).json({ message: 'Case could not be found.' });
 
     await Directive.deleteMany({ caseId: foundCase._id });
+    await deleteActionPlansByCase(foundCase._id);
     await AuditLog.deleteMany({ caseId: foundCase._id });
     await foundCase.deleteOne();
 

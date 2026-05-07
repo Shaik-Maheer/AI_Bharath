@@ -5,15 +5,17 @@ import { fileURLToPath } from 'url';
 import User from '../models/User.js';
 import Case from '../models/Case.js';
 import Directive from '../models/Directive.js';
+import ActionPlan from '../models/ActionPlan.js';
 import AuditLog from '../models/AuditLog.js';
 import { processJudgmentText } from '../mock-ai/processor.js';
+import { syncActionPlansFromDirectives } from '../services/actionPlanSync.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export async function seedDatabase({ reset = true } = {}) {
   if (reset) {
-    await Promise.all([User.deleteMany({}), Case.deleteMany({}), Directive.deleteMany({}), AuditLog.deleteMany({})]);
+    await Promise.all([User.deleteMany({}), Case.deleteMany({}), Directive.deleteMany({}), ActionPlan.deleteMany({}), AuditLog.deleteMany({})]);
   }
 
   if (!reset && (await User.countDocuments({})) > 0) {
@@ -70,6 +72,7 @@ export async function seedDatabase({ reset = true } = {}) {
   verifiedDirectives[1].dependsOn = [verifiedDirectives[0]._id];
   verifiedDirectives[2].dependsOn = [verifiedDirectives[0]._id];
   await Promise.all([verifiedDirectives[1].save(), verifiedDirectives[2].save()]);
+  await syncActionPlansFromDirectives(verifiedDirectives);
 
   const pendingCase = await Case.create({
     caseId: 'CASE-2024-002',
@@ -87,7 +90,7 @@ export async function seedDatabase({ reset = true } = {}) {
     rawExtraction: {}
   });
 
-  await Directive.insertMany([
+  const pendingDirectives = await Directive.insertMany([
     {
       caseId: pendingCase._id,
       directiveNumber: 1,
@@ -148,6 +151,7 @@ export async function seedDatabase({ reset = true } = {}) {
       whatIfRisk: 'If delayed beyond the deadline: appeal rights may be prejudiced, while compliance obligations continue.'
     }
   ]);
+  await syncActionPlansFromDirectives(pendingDirectives);
 
   await AuditLog.insertMany([
     { caseId: verifiedCase._id, action: 'case_uploaded', performedBy: admin._id, performedAt: new Date('2024-02-15T09:30:00.000Z'), details: { directives: 5 } },

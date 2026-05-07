@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Building2, CheckCircle2, Clock, ClipboardList } from 'lucide-react';
 import { api, friendlyError } from '../utils/api';
 import { formatDate } from '../utils/date';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
+import { subscribeDataUpdates } from '../utils/liveUpdates';
 import KpiCard from '../components/KpiCard';
 import SortableTable from '../components/SortableTable';
 import StatusBadge from '../components/StatusBadge';
@@ -18,27 +19,43 @@ export default function Departments() {
   const [loading, setLoading] = useState(true);
   const { notify } = useToast();
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/cases');
-      const details = await Promise.all(data.cases.map((item) => api.get(`/cases/${item.caseId}`)));
-      const all = details.flatMap((response) =>
-        response.data.directives
-          .filter((directive) => ['approved', 'edited'].includes(directive.verificationStatus))
-          .map((directive) => ({ ...directive, caseMeta: response.data.case }))
-      );
-      setActions(all);
+      const { data } = await api.get('/dashboard/actions');
+      setActions(data.actions || []);
     } catch (error) {
       notify(friendlyError(error), 'error');
     } finally {
       setLoading(false);
     }
-  }
+  }, [notify]);
 
   useEffect(() => {
-    load();
-  }, []);
+    let active = true;
+    const loadSafely = () => {
+      if (!active) return;
+      load();
+    };
+    const onFocus = () => loadSafely();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadSafely();
+    };
+    const unsubscribe = subscribeDataUpdates(() => loadSafely());
+
+    loadSafely();
+    const id = setInterval(loadSafely, 20000);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+      unsubscribe();
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
 
   const filtered = useMemo(() => actions.filter((item) => item.responsibleDepartment === selected), [actions, selected]);
   const stats = {
@@ -77,8 +94,8 @@ export default function Departments() {
           rows={filtered}
           empty={<EmptyState title={`No ${selected} actions`} message="No verified actions are currently assigned to this department." />}
           columns={[
-            { key: 'caseId', label: 'Case ID', accessor: (row) => row.caseMeta?.caseId, render: (row) => <span className="font-bold text-navy">{row.caseMeta?.caseId}</span> },
-            { key: 'caseTitle', label: 'Case', accessor: (row) => row.caseMeta?.caseTitle },
+            { key: 'caseId', label: 'Case ID', accessor: (row) => row.caseId?.caseId, render: (row) => <span className="font-bold text-navy">{row.caseId?.caseId}</span> },
+            { key: 'caseTitle', label: 'Case', accessor: (row) => row.caseId?.caseTitle },
             { key: 'directiveNumber', label: 'Directive' },
             { key: 'actionDescription', label: 'Action' },
             { key: 'deadline', label: 'Deadline', render: (row) => formatDate(row.deadline) },

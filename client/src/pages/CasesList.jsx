@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FileUp, Trash2 } from 'lucide-react';
 import { api, friendlyError } from '../utils/api';
@@ -6,6 +6,7 @@ import { formatDate } from '../utils/date';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
+import { publishDataUpdate, subscribeDataUpdates } from '../utils/liveUpdates';
 import SortableTable from '../components/SortableTable';
 import StatusBadge from '../components/StatusBadge';
 import ConfirmModal from '../components/ConfirmModal';
@@ -17,30 +18,58 @@ export default function CasesList() {
   const [filters, setFilters] = useState({ search: '', status: '', startDate: '', endDate: '' });
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [loading, setLoading] = useState(false);
+  const filtersRef = useRef(filters);
   const { user } = useAuth();
   const { notify } = useToast();
   const navigate = useNavigate();
 
-  async function load() {
+  useEffect(() => {
+    filtersRef.current = filters;
+  }, [filters]);
+
+  const load = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/cases', { params: filters });
+      const { data } = await api.get('/cases', { params: filtersRef.current });
       setCases(data.cases);
     } catch (error) {
       notify(friendlyError(error), 'error');
     } finally {
       setLoading(false);
     }
-  }
+  }, [notify]);
 
   useEffect(() => {
-    load();
-  }, []);
+    let active = true;
+    const loadSafely = () => {
+      if (!active) return;
+      load();
+    };
+    const onFocus = () => loadSafely();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadSafely();
+    };
+    const unsubscribe = subscribeDataUpdates(() => loadSafely());
+
+    loadSafely();
+    const id = setInterval(loadSafely, 20000);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+      unsubscribe();
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
 
   async function removeCase() {
     try {
       await api.delete(`/cases/${deleteTarget.caseId}`);
       notify('Case deleted.');
+      publishDataUpdate('case-deleted');
       setDeleteTarget(null);
       load();
     } catch (error) {

@@ -5,6 +5,7 @@ import { api, friendlyError } from '../utils/api';
 import { dateInputValue } from '../utils/date';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
+import { publishDataUpdate } from '../utils/liveUpdates';
 import TextHighlighter from '../components/TextHighlighter';
 import ConfidenceBar from '../components/ConfidenceBar';
 import StatusBadge from '../components/StatusBadge';
@@ -96,6 +97,7 @@ export default function VerifyPage() {
       };
       await api.put(`/directives/${selected._id}/verify`, { decision, updates, reason: decision === 'edited' ? 'Reviewer confirmed field updates.' : '' });
       notify(decision === 'rejected' ? 'Directive rejected.' : 'Directive verified.');
+      publishDataUpdate('directive-verified');
       setRejectTarget(null);
       await load();
     } catch (error) {
@@ -110,6 +112,7 @@ export default function VerifyPage() {
     try {
       await api.put(`/cases/${caseId}/submit-verified`);
       notify('Case submitted to dashboard.');
+      publishDataUpdate('case-verified');
       navigate(`/cases/${caseId}`);
     } catch (error) {
       notify(friendlyError(error), 'error');

@@ -1,23 +1,30 @@
 import express from 'express';
-import Directive from '../models/Directive.js';
+import ActionPlan from '../models/ActionPlan.js';
 import AuditLog from '../models/AuditLog.js';
 import { protect } from '../middleware/auth.js';
 import Case from '../models/Case.js';
 
 const router = express.Router();
 
-const approvedFilter = { verificationStatus: { $in: ['approved', 'edited'] } };
+const approvedStatuses = ['approved', 'edited'];
+const trustedCaseStatuses = ['active', 'verified'];
+
+async function trustedCaseIds() {
+  return Case.distinct('_id', { status: { $in: trustedCaseStatuses } });
+}
 
 router.get('/summary', protect, async (_req, res, next) => {
   try {
     const now = new Date();
+    const caseIds = await trustedCaseIds();
+    const approvedFilter = { verificationStatus: { $in: approvedStatuses }, caseId: { $in: caseIds } };
     const [activeCaseIds, totalActions, pending, inProgress, completed, overdue] = await Promise.all([
-      Directive.distinct('caseId', approvedFilter),
-      Directive.countDocuments(approvedFilter),
-      Directive.countDocuments({ ...approvedFilter, trackingStatus: 'Pending' }),
-      Directive.countDocuments({ ...approvedFilter, trackingStatus: 'In Progress' }),
-      Directive.countDocuments({ ...approvedFilter, trackingStatus: 'Completed' }),
-      Directive.countDocuments({ ...approvedFilter, deadline: { $lt: now }, trackingStatus: { $ne: 'Completed' } })
+      ActionPlan.distinct('caseId', approvedFilter),
+      ActionPlan.countDocuments(approvedFilter),
+      ActionPlan.countDocuments({ ...approvedFilter, trackingStatus: 'Pending' }),
+      ActionPlan.countDocuments({ ...approvedFilter, trackingStatus: 'In Progress' }),
+      ActionPlan.countDocuments({ ...approvedFilter, trackingStatus: 'Completed' }),
+      ActionPlan.countDocuments({ ...approvedFilter, deadline: { $lt: now }, trackingStatus: { $ne: 'Completed' } })
     ]);
     const activeCases = activeCaseIds.length;
 
@@ -29,8 +36,9 @@ router.get('/summary', protect, async (_req, res, next) => {
 
 router.get('/department', protect, async (_req, res, next) => {
   try {
-    const breakdown = await Directive.aggregate([
-      { $match: approvedFilter },
+    const caseIds = await trustedCaseIds();
+    const breakdown = await ActionPlan.aggregate([
+      { $match: { verificationStatus: { $in: approvedStatuses }, caseId: { $in: caseIds } } },
       { $group: { _id: '$responsibleDepartment', count: { $sum: 1 }, pending: { $sum: { $cond: [{ $eq: ['$trackingStatus', 'Pending'] }, 1, 0] } } } },
       { $sort: { count: -1 } }
     ]);
@@ -43,8 +51,10 @@ router.get('/department', protect, async (_req, res, next) => {
 router.get('/high-risk', protect, async (_req, res, next) => {
   try {
     const now = new Date();
-    const actions = await Directive.find({
-      ...approvedFilter,
+    const caseIds = await trustedCaseIds();
+    const actions = await ActionPlan.find({
+      verificationStatus: { $in: approvedStatuses },
+      caseId: { $in: caseIds },
       $or: [{ priorityLevel: 'High' }, { riskLevel: { $in: ['Critical', 'High'] } }, { riskScore: { $gte: 75 } }, { deadline: { $lt: now } }],
       trackingStatus: { $ne: 'Completed' }
     })
@@ -59,14 +69,15 @@ router.get('/high-risk', protect, async (_req, res, next) => {
 
 router.get('/actions', protect, async (req, res, next) => {
   try {
-    const query = { ...approvedFilter };
+    const caseIds = await trustedCaseIds();
+    const query = { verificationStatus: { $in: approvedStatuses }, caseId: { $in: caseIds } };
     const { department, trackingStatus, priority } = req.query;
 
     if (department) query.responsibleDepartment = department;
     if (trackingStatus) query.trackingStatus = trackingStatus;
     if (priority) query.priorityLevel = priority;
 
-    const actions = await Directive.find(query)
+    const actions = await ActionPlan.find(query)
       .populate('caseId', 'caseId caseTitle courtName dateOfOrder petitioner respondent')
       .sort({ deadline: 1, createdAt: -1 });
 
@@ -82,17 +93,26 @@ router.get('/verification-queue', protect, async (_req, res, next) => {
       .select('caseId caseTitle courtName dateOfOrder uploadedAt')
       .sort({ uploadedAt: -1 });
 
-    const queue = await Promise.all(
-      pendingCases.map(async (caseItem) => {
-        const pending = await Directive.countDocuments({ caseId: caseItem._id, verificationStatus: 'pending' });
-        const approved = await Directive.countDocuments({ caseId: caseItem._id, verificationStatus: { $in: ['approved', 'edited'] } });
-        return {
-          ...caseItem.toObject(),
-          pendingDirectives: pending,
-          approvedDirectives: approved
-        };
-      })
-    );
+    const counts = await ActionPlan.aggregate([
+      { $match: { caseId: { $in: pendingCases.map((item) => item._id) } } },
+      {
+        $group: {
+          _id: '$caseId',
+          pendingDirectives: { $sum: { $cond: [{ $eq: ['$verificationStatus', 'pending'] }, 1, 0] } },
+          approvedDirectives: { $sum: { $cond: [{ $in: ['$verificationStatus', approvedStatuses] }, 1, 0] } }
+        }
+      }
+    ]);
+    const countsByCase = new Map(counts.map((item) => [String(item._id), item]));
+
+    const queue = pendingCases.map((caseItem) => {
+      const count = countsByCase.get(String(caseItem._id));
+      return {
+        ...caseItem.toObject(),
+        pendingDirectives: count?.pendingDirectives || 0,
+        approvedDirectives: count?.approvedDirectives || 0
+      };
+    });
 
     res.json({ queue });
   } catch (error) {
@@ -102,9 +122,12 @@ router.get('/verification-queue', protect, async (_req, res, next) => {
 
 router.get('/recent', protect, async (_req, res, next) => {
   try {
-    const approvedDirectives = await Directive.find(approvedFilter).select('_id caseId').lean();
-    const approvedDirectiveIds = approvedDirectives.map((item) => item._id);
-    const approvedCaseIds = [...new Map(approvedDirectives.map((item) => [String(item.caseId), item.caseId])).values()];
+    const caseIds = await trustedCaseIds();
+    const approvedPlans = await ActionPlan.find({ verificationStatus: { $in: approvedStatuses }, caseId: { $in: caseIds } })
+      .select('directiveId caseId')
+      .lean();
+    const approvedDirectiveIds = approvedPlans.map((item) => item.directiveId).filter(Boolean);
+    const approvedCaseIds = [...new Map(approvedPlans.map((item) => [String(item.caseId), item.caseId])).values()];
 
     const audit = await AuditLog.find({
       $or: [

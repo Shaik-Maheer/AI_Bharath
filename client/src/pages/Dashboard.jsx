@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { AlertTriangle, CheckCircle2, ClipboardList, Download, FileText, Search } from 'lucide-react';
 import { api, friendlyError } from '../utils/api';
@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
 import { formatDate } from '../utils/date';
 import { useAuth } from '../context/AuthContext';
+import { publishDataUpdate, subscribeDataUpdates } from '../utils/liveUpdates';
 import KpiCard from '../components/KpiCard';
 import SortableTable from '../components/SortableTable';
 import StatusBadge from '../components/StatusBadge';
@@ -96,7 +97,7 @@ export default function Dashboard() {
   const { notify } = useToast();
   const { user } = useAuth();
 
-  async function load() {
+  const load = useCallback(async () => {
     try {
       const [summaryRes, departmentRes, highRiskRes, actionsRes, queueRes, recentRes] = await Promise.all([
         api.get('/dashboard/summary'),
@@ -117,13 +118,34 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }
+  }, [notify]);
 
   useEffect(() => {
-    load();
-    const id = setInterval(load, 60000);
-    return () => clearInterval(id);
-  }, []);
+    let active = true;
+    const loadSafely = () => {
+      if (!active) return;
+      load();
+    };
+
+    const onFocus = () => loadSafely();
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') loadSafely();
+    };
+    const unsubscribe = subscribeDataUpdates(() => loadSafely());
+
+    loadSafely();
+    const id = setInterval(loadSafely, 15000);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisible);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+      unsubscribe();
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, [load]);
 
   const statusData = [
     { label: 'Pending', value: summary.pending || 0 },
@@ -167,6 +189,7 @@ export default function Dashboard() {
         note: 'Escalated by admin from dashboard overdue monitoring.'
       });
       notify(`Directive ${action.directiveNumber} escalated.`);
+      publishDataUpdate('action-escalated');
       await load();
     } catch (error) {
       notify(friendlyError(error), 'error');

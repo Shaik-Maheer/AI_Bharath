@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import Directive from '../models/Directive.js';
 import AuditLog from '../models/AuditLog.js';
 import { protect, authorize, ROLES } from '../middleware/auth.js';
+import { syncActionPlanFromDirective } from '../services/actionPlanSync.js';
 
 const router = express.Router();
 
@@ -99,6 +100,7 @@ router.put('/:id/verify', protect, authorize(ROLES.REVIEWER), async (req, res, n
     directive.verifiedBy = req.user._id;
     directive.verifiedAt = new Date();
     await directive.save();
+    await syncActionPlanFromDirective(directive);
 
     await AuditLog.create({
       caseId: directive.caseId,
@@ -135,6 +137,7 @@ router.put('/:id/status', protect, authorize(ROLES.ADMIN, ROLES.REVIEWER), async
     directive.trackingStatus = status;
     directive.trackingHistory.push({ status, updatedBy: req.user._id, note });
     await directive.save();
+    await syncActionPlanFromDirective(directive);
 
     await AuditLog.create({
       caseId: directive.caseId,

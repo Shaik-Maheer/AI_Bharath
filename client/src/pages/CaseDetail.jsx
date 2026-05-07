@@ -6,6 +6,7 @@ import { daysRemaining, formatDate } from '../utils/date';
 import { useToast } from '../context/ToastContext';
 import { usePageTitle } from '../utils/usePageTitle';
 import { useAuth } from '../context/AuthContext';
+import { publishDataUpdate } from '../utils/liveUpdates';
 import SortableTable from '../components/SortableTable';
 import StatusBadge from '../components/StatusBadge';
 import RiskModal from '../components/RiskModal';
@@ -75,6 +76,7 @@ export default function CaseDetail() {
     try {
       await api.put(`/directives/${directive._id}/status`, { status, note: 'Updated from case detail view.' });
       notify('Tracking status updated.');
+      publishDataUpdate('directive-status-updated');
       load();
     } catch (error) {
       notify(friendlyError(error), 'error');
