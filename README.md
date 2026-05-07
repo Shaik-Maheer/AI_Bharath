@@ -49,13 +49,14 @@ Windows (PowerShell):
 Copy-Item server/.env.example server/.env
 ```
 
-3. Choose one backend mode:
+3. Configure MongoDB Atlas in `server/.env`:
 
-- Persistent MongoDB mode (recommended):
-  - Start local MongoDB
-  - Keep `MONGO_URI` in `server/.env` as `mongodb://127.0.0.1:27017/adhikarloop`
-- In-memory demo mode (no local Mongo install required):
-  - Run backend with `MONGO_URI=memory`
+```env
+MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.230fpdv.mongodb.net/aibharath?retryWrites=true&w=majority&appName=Cluster0
+```
+
+4. Alternative demo mode (no local/Atlas Mongo install required):
+  - Run backend with `MONGODB_URI=memory`
 
 ## Run Commands
 
@@ -85,13 +86,26 @@ npm run build
 
 ## Environment Variables (`server/.env`)
 
-- `PORT` - Backend port (default: `5000`)
-- `MONGO_URI` - Mongo connection string (or `memory` for demo mode)
+- `NODE_ENV` - `development` or `production`
+- `PORT` - Backend port (default: `5000`, Render provides automatically)
+- `MONGODB_URI` - Mongo connection string (`mongodb+srv://...`) or `memory` for demo mode
 - `JWT_SECRET` - JWT signing secret
 - `CLIENT_ORIGIN` - Allowed frontend origins (comma separated)
 - `MONGO_DNS_SERVERS` - DNS servers used for `mongodb+srv` URIs
 - `MONGO_FALLBACK_TO_MEMORY` - `true/false`, fallback to in-memory DB if persistent DB fails
 - `AUTO_SEED` - `true/false`, auto-seed on startup (enabled in demo mode)
+- `DB_MAX_RETRIES` - Startup retry attempts for MongoDB connection
+- `DB_RETRY_DELAY_MS` - Delay between connection retries
+- `DB_SERVER_SELECTION_TIMEOUT_MS` - MongoDB server selection timeout
+- `DB_SOCKET_TIMEOUT_MS` - MongoDB socket timeout
+- `DB_MAX_POOL_SIZE` / `DB_MIN_POOL_SIZE` - Connection pool tuning
+
+## Atlas + Render Notes
+
+- Backend validates required env on boot and will fail fast if `MONGODB_URI` is missing/invalid.
+- Server starts only after successful DB connect.
+- DB connection has retry logic, structured logging, and disconnect/reconnect safeguards.
+- On Render, set `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`, and `CLIENT_ORIGIN`.
 
 ## Demo Credentials
 

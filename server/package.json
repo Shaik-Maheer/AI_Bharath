@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-port.ps1 && nodemon server.js",
     "dev:clean": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/free-port.ps1 && nodemon server.js",
-    "dev:demo": "cross-env MONGO_URI=memory AUTO_SEED=true nodemon server.js",
+    "dev:demo": "cross-env MONGODB_URI=memory AUTO_SEED=true nodemon server.js",
     "start": "node server.js",
     "seed": "node scripts/seed.js"
   },

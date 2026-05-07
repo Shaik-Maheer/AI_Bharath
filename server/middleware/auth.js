@@ -1,5 +1,6 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
+import { env } from '../config/env.js';
 
 export async function protect(req, res, next) {
   try {
@@ -10,7 +11,7 @@ export async function protect(req, res, next) {
       return res.status(401).json({ message: 'Authentication is required.' });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'adhikarloop-dev-secret');
+    const decoded = jwt.verify(token, env.jwtSecret);
     const user = await User.findById(decoded.id).select('-passwordHash');
 
     if (!user) {
@@ -33,4 +34,3 @@ export function authorize(...roles) {
     next();
   };
 }
-

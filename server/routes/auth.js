@@ -3,11 +3,12 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { protect } from '../middleware/auth.js';
+import { env } from '../config/env.js';
 
 const router = express.Router();
 
 function signToken(user) {
-  return jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'adhikarloop-dev-secret', {
+  return jwt.sign({ id: user._id, role: user.role }, env.jwtSecret, {
     expiresIn: '8h'
   });
 }

@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,18 +8,16 @@ import caseRoutes from './routes/cases.js';
 import directiveRoutes from './routes/directives.js';
 import dashboardRoutes from './routes/dashboard.js';
 import { notFound, errorHandler } from './middleware/error.js';
-import { connectDatabase } from './config/db.js';
+import { connectDatabase, disconnectDatabase } from './config/db.js';
+import { env } from './config/env.js';
+import { logger } from './config/logger.js';
 import { seedDatabase } from './scripts/seedData.js';
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-dotenv.config({ path: path.join(__dirname, '.env') });
-
-const allowedOrigins = (process.env.CLIENT_ORIGIN || 'http://localhost:5173,http://localhost:5174')
-  .split(',')
-  .map((origin) => origin.trim());
+const allowedOrigins = env.clientOrigins;
+let httpServer;
 
 app.use(
   cors({
@@ -37,7 +34,10 @@ app.use(
 );
 app.use(express.json({ limit: '2mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(morgan('dev'));
+if (env.isProduction) {
+  app.set('trust proxy', 1);
+}
+app.use(morgan(env.isProduction ? 'combined' : 'dev'));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/', (_req, res) => {
@@ -72,30 +72,59 @@ app.use('/api/dashboard', dashboardRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-const port = process.env.PORT || 5000;
+async function shutdown(signal) {
+  logger.warn(`Received ${signal}. Shutting down service gracefully.`);
+  try {
+    if (httpServer) {
+      await new Promise((resolve, reject) => {
+        httpServer.close((error) => {
+          if (error) reject(error);
+          else resolve();
+        });
+      });
+    }
+    await disconnectDatabase();
+    logger.info('Service shutdown completed.');
+    process.exit(0);
+  } catch (error) {
+    logger.error('Graceful shutdown failed.', { message: error.message });
+    process.exit(1);
+  }
+}
 
-connectDatabase()
-  .then(async ({ mode }) => {
-    if (process.env.AUTO_SEED === 'true' || mode === 'memory') {
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('unhandledRejection', (reason) => {
+  logger.error('Unhandled promise rejection.', { reason: String(reason) });
+});
+
+async function startServer() {
+  try {
+    const { mode } = await connectDatabase();
+
+    if (env.autoSeed || mode === 'memory') {
       const result = await seedDatabase({ reset: false });
-      console.log(result.skipped ? 'Demo seed skipped; database already has users.' : 'Demo seed completed.');
+      logger.info(result.skipped ? 'Demo seed skipped; database already has users.' : 'Demo seed completed.');
     }
 
-    const server = app.listen(port, () => {
-      console.log(`AdhikarLoop API running on http://localhost:${port} (${mode} database)`);
+    httpServer = app.listen(env.port, () => {
+      logger.info(`AdhikarLoop API running on port ${env.port} (${mode} database)`, {
+        nodeEnv: env.nodeEnv,
+        origins: allowedOrigins
+      });
     });
 
-    server.on('error', (error) => {
+    httpServer.on('error', (error) => {
       if (error.code === 'EADDRINUSE') {
-        console.error(`Port ${port} is already in use. Stop the existing backend process or set PORT to another value in server/.env.`);
+        logger.error(`Port ${env.port} is already in use.`);
         process.exit(1);
       }
-
       throw error;
     });
-  })
-  .catch((error) => {
-    console.error('MongoDB connection failed:', error.message);
-    console.error('Start MongoDB locally, set MONGO_URI to a reachable MongoDB connection string, or run npm.cmd run dev:demo for in-memory demo mode.');
+  } catch (error) {
+    logger.error('Startup failed. MongoDB connection could not be established.', { message: error.message });
     process.exit(1);
-  });
+  }
+}
+
+startServer();
