@@ -106,6 +106,9 @@ npm run build
 - Server starts only after successful DB connect.
 - DB connection has retry logic, structured logging, and disconnect/reconnect safeguards.
 - On Render, set `NODE_ENV=production`, `MONGODB_URI`, `JWT_SECRET`, and `CLIENT_ORIGIN`.
+- Render backend service commands:
+  - Build Command: `npm run install:all`
+  - Start Command: `npm run start --prefix server`
 
 ## Demo Credentials
 
