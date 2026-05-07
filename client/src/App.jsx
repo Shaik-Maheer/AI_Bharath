@@ -26,14 +26,15 @@ function ProtectedRoute({ children, allowedRoles }) {
 }
 
 export default function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  const { loading: authLoading } = useAuth();
+  const [minSplashElapsed, setMinSplashElapsed] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 1700);
+    const timer = setTimeout(() => setMinSplashElapsed(true), 3000);
     return () => clearTimeout(timer);
   }, []);
 
-  if (showSplash) return <AppSplash />;
+  if (!minSplashElapsed || authLoading) return <AppSplash />;
 
   return (
     <Routes>
