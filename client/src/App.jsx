@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { useAuth } from './context/AuthContext';
 import Layout from './components/Layout';
+import AppSplash from './components/AppSplash';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CasesList from './pages/CasesList';
@@ -24,6 +26,15 @@ function ProtectedRoute({ children, allowedRoles }) {
 }
 
 export default function App() {
+  const [showSplash, setShowSplash] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 1700);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (showSplash) return <AppSplash />;
+
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
