@@ -67,7 +67,7 @@ router.get('/actions', protect, async (req, res, next) => {
     if (priority) query.priorityLevel = priority;
 
     const actions = await Directive.find(query)
-      .populate('caseId', 'caseId caseTitle courtName dateOfOrder')
+      .populate('caseId', 'caseId caseTitle courtName dateOfOrder petitioner respondent')
       .sort({ deadline: 1, createdAt: -1 });
 
     res.json({ actions });
