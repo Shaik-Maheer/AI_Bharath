@@ -26,10 +26,9 @@ textarea {
 }
 
 .table-header {
-  @apply cursor-pointer select-none px-4 py-3 text-left text-xs font-bold uppercase tracking-wide text-slate-600;
+  @apply cursor-pointer select-none px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-slate-600 sm:px-4 sm:py-3;
 }
 
 .table-cell {
-  @apply px-4 py-3 align-top text-sm text-slate-700;
+  @apply px-3 py-2 align-top text-xs text-slate-700 sm:px-4 sm:py-3 sm:text-sm;
 }
-

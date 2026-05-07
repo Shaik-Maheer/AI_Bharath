@@ -1,5 +1,6 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { BarChart3, Briefcase, Building2, ClipboardCheck, FileUp, Gavel, LogOut, ShieldCheck, Users } from 'lucide-react';
+import { BarChart3, Briefcase, Building2, ClipboardCheck, FileUp, Gavel, LogOut, Menu, ShieldCheck, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 
 const navItems = [
@@ -22,6 +23,11 @@ export default function Layout({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
   const visibleNav = navItems.filter((item) => item.roles.includes(user?.role));
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname]);
 
   function handleLogout() {
     logout();
@@ -64,11 +70,20 @@ export default function Layout({ children }) {
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 border-b border-slate-200 bg-white">
           <div className="flex min-h-20 flex-col justify-center gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div>
+            <div className="flex items-start gap-3">
+              <button
+                onClick={() => setMobileNavOpen((current) => !current)}
+                className="focus-ring mt-0.5 rounded-md border border-slate-200 p-2 text-slate-600 lg:hidden"
+                aria-label="Toggle menu"
+              >
+                {mobileNavOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+              </button>
+              <div>
               <p className="text-xs font-bold uppercase tracking-wide text-gold">Government of India - Ministry of Law & Justice</p>
               <div className="mt-1 flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-navy" />
                 <p className="text-sm font-semibold capitalize text-slate-600">{breadcrumb(location.pathname)}</p>
+              </div>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -81,6 +96,29 @@ export default function Layout({ children }) {
               </button>
             </div>
           </div>
+          {mobileNavOpen && (
+            <div className="border-t border-slate-200 px-3 py-3 lg:hidden">
+              <nav className="grid gap-1">
+                {visibleNav.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-semibold ${
+                          isActive ? 'bg-navy text-white' : 'text-slate-700 hover:bg-slate-100'
+                        }`
+                      }
+                    >
+                      <Icon className="h-4 w-4" />
+                      {item.label}
+                    </NavLink>
+                  );
+                })}
+              </nav>
+            </div>
+          )}
         </header>
 
         <main className="px-4 py-6 sm:px-6">{children}</main>
