@@ -1,0 +1,6 @@
+{
+  "watch": ["server.js", "config", "models", "routes", "middleware", "mock-ai", "scripts"],
+  "ext": "js,json",
+  "ignore": ["uploads/*", "*.log", "*.err", "node_modules/*"],
+  "delay": "500"
+}
